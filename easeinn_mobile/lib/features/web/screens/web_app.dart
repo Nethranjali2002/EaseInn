@@ -64,11 +64,6 @@ final webRouterProvider = Provider<GoRouter>((ref) {
       // Allow public review page without auth
       if (isPublicReview) return null;
 
-      if (isAuth && auth.user?.role == 'staff') {
-        ref.read(authProvider.notifier).logout();
-        return '/web/login';
-      }
-
       if (!isAuth && !isLogin) return '/web/login';
       if (isAuth && isLogin) return '/web/dashboard';
       return null;
