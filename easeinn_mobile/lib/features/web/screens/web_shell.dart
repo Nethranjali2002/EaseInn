@@ -66,7 +66,8 @@ class WebShell extends ConsumerWidget {
                               ),
                             ),
                             Text(
-                              user?.role == 'admin' ? 'Admin Portal' : 'Manager Portal',
+                              user?.role == 'admin' ? 'Admin Portal' :
+                              (user?.role == 'manager' ? 'Manager Portal' : 'Staff Portal'),
                               style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 12,
