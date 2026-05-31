@@ -45,18 +45,7 @@ class _WebLoginScreenState extends ConsumerState<WebLoginScreen> {
     if (!mounted) return;
     final auth = ref.read(authProvider);
     if (auth.isAuthenticated) {
-      if (auth.user?.role == 'staff') {
-        await ref.read(authProvider.notifier).logout();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Access denied. Staff roles are restricted to the mobile application.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      } else {
-        context.go('/web/dashboard');
-      }
+      context.go('/web/dashboard');
     } else if (auth.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
