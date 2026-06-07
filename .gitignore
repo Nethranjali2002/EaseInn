@@ -1,9 +1,14 @@
 node_modules/
 .env
+.env.development
+.env.production
 dist/
 coverage/
 *.log
 .DS_Store
+
+# Uploads
+uploads/
 
 # Playwright & test reports
 playwright-report/
