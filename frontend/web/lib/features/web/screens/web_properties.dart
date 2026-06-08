@@ -67,6 +67,8 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
     final state = ref.watch(propertyProvider);
     final auth = ref.watch(authProvider);
     final isAdmin = auth.user?.isAdmin ?? false;
+    final isManager = auth.user?.isManager ?? false;
+    final canManage = isAdmin || isManager;
 
     // Filter properties locally
     final filteredProperties = state.properties.where((p) {
@@ -143,7 +145,7 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
                     color: Color(0xFF1E293B),
                   ),
                 ),
-                if (isAdmin)
+                if (canManage)
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Add Property'),
@@ -354,10 +356,10 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
                       const DataColumn(label: Text('Rooms')),
                       const DataColumn(label: Text('Occupancy')),
                       const DataColumn(label: Text('Status')),
-                      if (isAdmin) const DataColumn(label: Text('Actions')),
+                      if (canManage) const DataColumn(label: Text('Actions')),
                     ],
                     rows: filteredProperties
-                        .map((p) => _propertyRow(p, isAdmin))
+                        .map((p) => _propertyRow(p, canManage))
                         .toList(),
                   ),
           ],
@@ -422,7 +424,7 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
     );
   }
 
-  List<DataCell> _propertyRow(Property p, bool isAdmin) {
+  List<DataCell> _propertyRow(Property p, bool canManage) {
     final logoUrl = p.logo.isNotEmpty
         ? p.logo
         : (p.images.isNotEmpty ? p.images.first : '');
@@ -510,7 +512,7 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
           ),
         ),
       ),
-      if (isAdmin)
+      if (canManage)
         DataCell(
           Row(
             mainAxisSize: MainAxisSize.min,

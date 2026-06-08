@@ -1004,7 +1004,7 @@ router.get('/properties/:propertyId/rooms/available', roomController.getAvailabl
  *       403:
  *         description: Admin only
  */
-router.post('/properties', authenticate, authorize('admin'), validate(createPropertySchema), propertyController.createProperty);
+router.post('/properties', authenticate, authorize(...managerRoles), validate(createPropertySchema), propertyController.createProperty);
 
 /**
  * @swagger
@@ -1083,7 +1083,7 @@ router.get('/properties/:id', authenticate, propertyController.getPropertyById);
  *       403:
  *         description: Admin only
  */
-router.patch('/properties/:id', authenticate, authorize('admin'), propertyController.preserveVersion, validate(updatePropertySchema), propertyController.updateProperty);
+router.patch('/properties/:id', authenticate, authorize(...managerRoles), propertyController.preserveVersion, validate(updatePropertySchema), propertyController.updateProperty);
 
 /**
  * @swagger
@@ -1109,7 +1109,7 @@ router.patch('/properties/:id', authenticate, authorize('admin'), propertyContro
  *       404:
  *         description: Property not found
  */
-router.delete('/properties/:id', authenticate, authorize('admin'), propertyController.deleteProperty);
+router.delete('/properties/:id', authenticate, authorize(...managerRoles), propertyController.deleteProperty);
 
 /**
  * @swagger

@@ -70,6 +70,8 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
     final rooms = ref.watch(roomProvider).rooms;
     final auth = ref.watch(authProvider);
     final isAdmin = auth.user?.isAdmin ?? false;
+    final isManager = auth.user?.isManager ?? false;
+    final canManage = isAdmin || isManager;
 
     // Calculate Summary Stats
     final now = DateTime.now();
@@ -631,7 +633,7 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                       DataColumn(label: Text('Actions')),
                     ],
                     rows: filteredBookings
-                        .map((b) => _bookingRow(b, isAdmin))
+                        .map((b) => _bookingRow(b, isAdmin, canManage))
                         .toList(),
                   ),
           ],
@@ -696,7 +698,7 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
     );
   }
 
-  List<DataCell> _bookingRow(Booking b, bool isAdmin) {
+  List<DataCell> _bookingRow(Booking b, bool isAdmin, bool canManage) {
     return [
       DataCell(
         Text(
@@ -762,11 +764,11 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
         ),
       ),
       DataCell(
-        Text(isAdmin ? 'Rs. ${b.totalAmount.toStringAsFixed(0)}' : 'Rs. ***'),
+        Text(isAdmin ? 'Rs. ${b.totalAmount.toStringAsFixed(0)}' : 'Rs. ${b.roomCharge.toStringAsFixed(0)}'),
       ),
       DataCell(
         ElevatedButton(
-          onPressed: () => _showBookingDetails(b, isAdmin),
+          onPressed: () => _showBookingDetails(b, isAdmin, canManage),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF2563EB),
             foregroundColor: Colors.white,
@@ -779,7 +781,7 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
     ];
   }
 
-  void _showBookingDetails(Booking b, bool isAdmin) {
+  void _showBookingDetails(Booking b, bool isAdmin, bool canManage) {
     bool hasLoadedPayments = false;
     List<Payment> bookingPayments = [];
     bool isLoadingPayments = true;
@@ -882,7 +884,7 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                           style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
                         ),
                         const Spacer(),
-                        if (isAdmin) ...[
+                        if (canManage) ...[
                           _statusActionBtn('Edit', Icons.edit, Colors.indigo, () async {
                             Navigator.pop(ctx);
                             if (currentBooking.propertyId.isNotEmpty) {
@@ -1018,21 +1020,23 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                       _detailBlock('Pricing', Icons.attach_money, const Color(0xFF00695C), [
                         _detailRow(
                           'Room Charge',
-                          isAdmin ? 'LKR ${currentBooking.roomCharge.toStringAsFixed(0)}' : 'LKR ***',
+                          'LKR ${currentBooking.roomCharge.toStringAsFixed(0)}',
                         ),
                         _detailRow('Meal Plan', currentBooking.mealPlan.isNotEmpty ? currentBooking.mealPlan : 'None'),
-                        if (currentBooking.mealPlanTotal > 0)
-                          _detailRow('Meal Plan Charge', isAdmin ? 'LKR ${currentBooking.mealPlanTotal.toStringAsFixed(0)}' : 'LKR ***'),
-                        if (currentBooking.discount > 0)
-                          _detailRow('Discount', isAdmin ? '- LKR ${currentBooking.discount.toStringAsFixed(0)}' : 'LKR ***'),
-                        if (currentBooking.tax > 0)
-                          _detailRow('Taxes', isAdmin ? 'LKR ${currentBooking.tax.toStringAsFixed(0)}' : 'LKR ***'),
-                        const Divider(height: 12),
-                        _detailHighlightRow(
-                          'Total',
-                          isAdmin ? 'LKR ${currentBooking.totalAmount.toStringAsFixed(0)}' : 'LKR ***',
-                          const Color(0xFF00695C),
-                        ),
+                        if (isAdmin && currentBooking.mealPlanTotal > 0)
+                          _detailRow('Meal Plan Charge', 'LKR ${currentBooking.mealPlanTotal.toStringAsFixed(0)}'),
+                        if (isAdmin && currentBooking.discount > 0)
+                          _detailRow('Discount', '- LKR ${currentBooking.discount.toStringAsFixed(0)}'),
+                        if (isAdmin && currentBooking.tax > 0)
+                          _detailRow('Taxes', 'LKR ${currentBooking.tax.toStringAsFixed(0)}'),
+                        if (isAdmin) ...[
+                          const Divider(height: 12),
+                          _detailHighlightRow(
+                            'Total',
+                            'LKR ${currentBooking.totalAmount.toStringAsFixed(0)}',
+                            const Color(0xFF00695C),
+                          ),
+                        ],
                       ]),
                       // Section 6
                       _detailBlock('Payment', Icons.payments, const Color(0xFF1565C0), [
@@ -1041,12 +1045,13 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                           currentBooking.paymentStatus.toUpperCase(),
                           _paymentColor(currentBooking.paymentStatus),
                         ),
-                        _detailRow('Paid Amount', isAdmin ? 'LKR ${currentBooking.amountPaid.toStringAsFixed(0)}' : 'LKR ***'),
-                        _detailHighlightRow(
-                          'Outstanding',
-                          isAdmin ? 'LKR ${(currentBooking.totalAmount - currentBooking.amountPaid).toStringAsFixed(0)}' : 'LKR ***',
-                          (currentBooking.totalAmount - currentBooking.amountPaid) > 0 ? Colors.red : const Color(0xFF2E7D32),
-                        ),
+                        if (isAdmin) _detailRow('Paid Amount', 'LKR ${currentBooking.amountPaid.toStringAsFixed(0)}'),
+                        if (isAdmin)
+                          _detailHighlightRow(
+                            'Outstanding',
+                            'LKR ${(currentBooking.totalAmount - currentBooking.amountPaid).toStringAsFixed(0)}',
+                            (currentBooking.totalAmount - currentBooking.amountPaid) > 0 ? Colors.red : const Color(0xFF2E7D32),
+                          ),
                         _detailRow('Method', currentBooking.paymentMethod.isNotEmpty ? currentBooking.paymentMethod : 'N/A'),
                         const SizedBox(height: 12),
                         Row(
@@ -1175,7 +1180,7 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                             ),
                           ),
                         const SizedBox(height: 12),
-                        if (isAdmin &&
+                        if (canManage &&
                             (currentBooking.totalAmount -
                                     currentBooking.amountPaid) >
                                 0)
@@ -2564,6 +2569,8 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
 
   void _showDayBookingsDialog(DateTime date, List<Booking> bookings) {
     final isAdmin = ref.read(authProvider).user?.isAdmin ?? false;
+    final isManager = ref.read(authProvider).user?.isManager ?? false;
+    final canManage = isAdmin || isManager;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -2596,7 +2603,7 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                   trailing: ElevatedButton(
                     onPressed: () {
                       Navigator.pop(ctx);
-                      _showBookingDetails(b, isAdmin);
+                      _showBookingDetails(b, isAdmin, canManage);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF2563EB),
