@@ -29,6 +29,7 @@ const env = {
   twilioAccountSid: process.env.TWILIO_ACCOUNT_SID,
   twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
   twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
+  imgbbApiKey: process.env.IMGBB_API_KEY,
 };
 
 export default env;

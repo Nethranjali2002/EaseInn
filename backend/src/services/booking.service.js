@@ -175,13 +175,15 @@ export const getBookings = async (propertyId, { page = 1, limit = 20, status, se
   return { bookings, total, page, limit };
 };
 
-export const getAllBookings = async (userId, { page = 1, limit = 50, status, search = '', startDate, endDate, propertyId }) => {
+export const getAllBookings = async (userId, userRole, { page = 1, limit = 50, status, search = '', startDate, endDate, propertyId }) => {
   const query = {};
   if (propertyId) {
     query.property = propertyId;
-  } else {
+  } else if (userRole === 'admin') {
     const properties = await Property.find({ owner: userId }).select('_id');
     query.property = { $in: properties.map(p => p._id) };
+  } else {
+    // Manager/staff: return all bookings (no owner filter)
   }
   if (status) query.bookingStatus = status;
   if (search) {

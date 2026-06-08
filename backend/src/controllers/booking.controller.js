@@ -23,7 +23,7 @@ export const getBookings = async (req, res, next) => {
 export const getAllBookings = async (req, res, next) => {
   try {
     const { page, limit, status, search, startDate, endDate, propertyId } = req.query;
-    const result = await bookingService.getAllBookings(req.user.sub, { page: parseInt(page) || 1, limit: parseInt(limit) || 50, status, search, startDate, endDate, propertyId });
+    const result = await bookingService.getAllBookings(req.user.sub, req.user.role, { page: parseInt(page) || 1, limit: parseInt(limit) || 50, status, search, startDate, endDate, propertyId });
     return sendSuccess(res, { data: result });
   } catch (err) { return next(err); }
 };

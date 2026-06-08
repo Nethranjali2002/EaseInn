@@ -21,7 +21,6 @@ app.use(cookieParser());
 
 setupSwagger(app);
 
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 app.use('/guest', express.static(path.join(__dirname, '../web')));
 
 app.use('/api/v1', routes);

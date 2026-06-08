@@ -18,6 +18,7 @@ class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
   String _selectedEventType =
       'All'; // All, Bookings, Tasks, Maintenance, Cleaning
   String _selectedStatus = 'All';
+  bool _isStaff = false;
 
   List<Map<String, dynamic>> _rawBookings = [];
   List<Map<String, dynamic>> _rawTasks = [];
@@ -27,13 +28,33 @@ class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadCalendarData());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = ref.read(authProvider).user;
+      _isStaff = user?.role == 'staff';
+      _loadCalendarData();
+    });
   }
 
   Future<void> _loadCalendarData() async {
     setState(() => _isLoading = true);
     try {
       final api = ref.read(apiClientProvider);
+
+      if (_isStaff) {
+        // Staff: Only load their assigned tasks
+        final res = await api.get('/tasks/my?limit=100');
+        final data = res.data['data'];
+        final tasks = data is Map ? (data['tasks'] as List?) ?? [] : [];
+        setState(() {
+          _rawTasks = tasks.map((t) => Map<String, dynamic>.from(t)).toList();
+          _rawBookings = [];
+          _rawRooms = [];
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Admin/Manager: Load all data
       await ref.read(propertyProvider.notifier).fetchProperties();
       final properties = ref.read(propertyProvider).properties;
 
@@ -295,9 +316,9 @@ class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Operational Planning Center',
-                style: TextStyle(
+              Text(
+                _isStaff ? 'My Task Calendar' : 'Operational Planning Center',
+                style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E293B),
@@ -310,248 +331,306 @@ class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
                   _viewSegmentButton('Week'),
                   _viewSegmentButton('Day'),
                   _viewSegmentButton('List'),
-                  _viewSegmentButton('Occupancy'),
+                  if (!_isStaff) _viewSegmentButton('Occupancy'),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 20),
 
-          // Dashboard Summary Cards
-          Row(
-            children: [
-              Expanded(
-                child: _buildSummaryCard(
-                  "Today's Check-Ins",
-                  '${stats['checkIns']}',
-                  Icons.login,
-                  Colors.green,
+          // Staff: Simple date navigation
+          if (_isStaff)
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(color: Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed: () {
+                        setState(() {
+                          if (_selectedView == 'Month') {
+                            _currentDate = DateTime(_currentDate.year, _currentDate.month - 1, 1);
+                          } else if (_selectedView == 'Week') {
+                            _currentDate = _currentDate.subtract(const Duration(days: 7));
+                          } else {
+                            _currentDate = _currentDate.subtract(const Duration(days: 1));
+                          }
+                        });
+                      },
+                    ),
+                    Text(
+                      _getFormattedDateTitle(),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: () {
+                        setState(() {
+                          if (_selectedView == 'Month') {
+                            _currentDate = DateTime(_currentDate.year, _currentDate.month + 1, 1);
+                          } else if (_selectedView == 'Week') {
+                            _currentDate = _currentDate.add(const Duration(days: 7));
+                          } else {
+                            _currentDate = _currentDate.add(const Duration(days: 1));
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () => setState(() => _currentDate = DateTime.now()),
+                      child: const Text('Today'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  "Today's Check-Outs",
-                  '${stats['checkOuts']}',
-                  Icons.logout,
-                  Colors.grey,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  'Occupied Rooms',
-                  '${stats['occupiedRooms']}',
-                  Icons.hotel,
-                  Colors.blue,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  'Available Rooms',
-                  '${stats['availableRooms']}',
-                  Icons.meeting_room,
-                  Colors.teal,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildSummaryCard(
-                  'Pending Arrivals',
-                  '${stats['pendingArrivals']}',
-                  Icons.hourglass_top,
-                  Colors.orange,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Filters Card
-          Card(
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              side: BorderSide(color: Colors.grey.shade200),
-              borderRadius: BorderRadius.circular(8),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  // Property Filter
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _selectedPropertyId,
-                      items: [
-                        const DropdownMenuItem(
-                          value: 'All',
-                          child: Text('All Properties'),
-                        ),
-                        ...properties.map(
-                          (p) => DropdownMenuItem(
-                            value: p.id,
-                            child: Text(p.name),
+          if (_isStaff) const SizedBox(height: 16),
+
+          // Dashboard Summary Cards (Admin/Manager only)
+          if (!_isStaff) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: _buildSummaryCard(
+                    "Today's Check-Ins",
+                    '${stats['checkIns']}',
+                    Icons.login,
+                    Colors.green,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard(
+                    "Today's Check-Outs",
+                    '${stats['checkOuts']}',
+                    Icons.logout,
+                    Colors.grey,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Occupied Rooms',
+                    '${stats['occupiedRooms']}',
+                    Icons.hotel,
+                    Colors.blue,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Available Rooms',
+                    '${stats['availableRooms']}',
+                    Icons.meeting_room,
+                    Colors.teal,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildSummaryCard(
+                    'Pending Arrivals',
+                    '${stats['pendingArrivals']}',
+                    Icons.hourglass_top,
+                    Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Filters Card
+            Card(
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(color: Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    // Property Filter
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedPropertyId,
+                        items: [
+                          const DropdownMenuItem(
+                            value: 'All',
+                            child: Text('All Properties'),
+                          ),
+                          ...properties.map(
+                            (p) => DropdownMenuItem(
+                              value: p.id,
+                              child: Text(p.name),
+                            ),
+                          ),
+                        ],
+                        onChanged: (v) {
+                          setState(() => _selectedPropertyId = v!);
+                          _loadCalendarData();
+                        },
+                        decoration: const InputDecoration(
+                          labelText: 'Property',
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
                           ),
                         ),
-                      ],
-                      onChanged: (v) {
-                        setState(() => _selectedPropertyId = v!);
-                        _loadCalendarData();
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Event Type Filter
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedEventType,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'All',
+                            child: Text('All Events'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Bookings',
+                            child: Text('Bookings'),
+                          ),
+                          DropdownMenuItem(value: 'Tasks', child: Text('Tasks')),
+                          DropdownMenuItem(
+                            value: 'Maintenance',
+                            child: Text('Maintenance'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Cleaning',
+                            child: Text('Cleaning'),
+                          ),
+                        ],
+                        onChanged: (v) => setState(() => _selectedEventType = v!),
+                        decoration: const InputDecoration(
+                          labelText: 'Event Type',
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Status Filter
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedStatus,
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'All',
+                            child: Text('All Statuses'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Confirmed',
+                            child: Text('Confirmed'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Checked-In',
+                            child: Text('Checked In'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Completed',
+                            child: Text('Completed'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Pending-Payment',
+                            child: Text('Pending Payment'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Cancelled',
+                            child: Text('Cancelled'),
+                          ),
+                        ],
+                        onChanged: (v) => setState(() => _selectedStatus = v!),
+                        decoration: const InputDecoration(
+                          labelText: 'Status',
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // Date Navigation Controls
+                    IconButton(
+                      icon: const Icon(Icons.chevron_left),
+                      onPressed: () {
+                        setState(() {
+                          if (_selectedView == 'Month' ||
+                              _selectedView == 'Occupancy') {
+                            _currentDate = DateTime(
+                              _currentDate.year,
+                              _currentDate.month - 1,
+                              1,
+                            );
+                          } else if (_selectedView == 'Week') {
+                            _currentDate = _currentDate.subtract(
+                              const Duration(days: 7),
+                            );
+                          } else {
+                            _currentDate = _currentDate.subtract(
+                              const Duration(days: 1),
+                            );
+                          }
+                        });
                       },
-                      decoration: const InputDecoration(
-                        labelText: 'Property',
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
+                    ),
+                    Text(
+                      _getFormattedDateTitle(),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Event Type Filter
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _selectedEventType,
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'All',
-                          child: Text('All Events'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Bookings',
-                          child: Text('Bookings'),
-                        ),
-                        DropdownMenuItem(value: 'Tasks', child: Text('Tasks')),
-                        DropdownMenuItem(
-                          value: 'Maintenance',
-                          child: Text('Maintenance'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Cleaning',
-                          child: Text('Cleaning'),
-                        ),
-                      ],
-                      onChanged: (v) => setState(() => _selectedEventType = v!),
-                      decoration: const InputDecoration(
-                        labelText: 'Event Type',
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                      ),
+                    IconButton(
+                      icon: const Icon(Icons.chevron_right),
+                      onPressed: () {
+                        setState(() {
+                          if (_selectedView == 'Month' ||
+                              _selectedView == 'Occupancy') {
+                            _currentDate = DateTime(
+                              _currentDate.year,
+                              _currentDate.month + 1,
+                              1,
+                            );
+                          } else if (_selectedView == 'Week') {
+                            _currentDate = _currentDate.add(
+                              const Duration(days: 7),
+                            );
+                          } else {
+                            _currentDate = _currentDate.add(
+                              const Duration(days: 1),
+                            );
+                          }
+                        });
+                      },
                     ),
-                  ),
-                  const SizedBox(width: 12),
+                    const SizedBox(width: 8),
 
-                  // Status Filter
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _selectedStatus,
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'All',
-                          child: Text('All Statuses'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Confirmed',
-                          child: Text('Confirmed'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Checked-In',
-                          child: Text('Checked In'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Completed',
-                          child: Text('Completed'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Pending-Payment',
-                          child: Text('Pending Payment'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Cancelled',
-                          child: Text('Cancelled'),
-                        ),
-                      ],
-                      onChanged: (v) => setState(() => _selectedStatus = v!),
-                      decoration: const InputDecoration(
-                        labelText: 'Status',
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
-                        ),
-                      ),
+                    ElevatedButton(
+                      onPressed: () =>
+                          setState(() => _currentDate = DateTime.now()),
+                      child: const Text('Today'),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Date Navigation Controls
-                  IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: () {
-                      setState(() {
-                        if (_selectedView == 'Month' ||
-                            _selectedView == 'Occupancy') {
-                          _currentDate = DateTime(
-                            _currentDate.year,
-                            _currentDate.month - 1,
-                            1,
-                          );
-                        } else if (_selectedView == 'Week') {
-                          _currentDate = _currentDate.subtract(
-                            const Duration(days: 7),
-                          );
-                        } else {
-                          _currentDate = _currentDate.subtract(
-                            const Duration(days: 1),
-                          );
-                        }
-                      });
-                    },
-                  ),
-                  Text(
-                    _getFormattedDateTitle(),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.chevron_right),
-                    onPressed: () {
-                      setState(() {
-                        if (_selectedView == 'Month' ||
-                            _selectedView == 'Occupancy') {
-                          _currentDate = DateTime(
-                            _currentDate.year,
-                            _currentDate.month + 1,
-                            1,
-                          );
-                        } else if (_selectedView == 'Week') {
-                          _currentDate = _currentDate.add(
-                            const Duration(days: 7),
-                          );
-                        } else {
-                          _currentDate = _currentDate.add(
-                            const Duration(days: 1),
-                          );
-                        }
-                      });
-                    },
-                  ),
-                  const SizedBox(width: 8),
-
-                  ElevatedButton(
-                    onPressed: () =>
-                        setState(() => _currentDate = DateTime.now()),
-                    child: const Text('Today'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: 20),
 
           // Color Legend

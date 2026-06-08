@@ -16,6 +16,15 @@ class WebDashboardScreen extends ConsumerStatefulWidget {
 class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
   String? _selectedPropertyId; // null represents "All Properties"
   bool _isLoading = false;
+  bool _isStaff = false;
+  bool _isAdmin = false;
+
+  // Staff-only data
+  List<dynamic> _myTasks = [];
+  int _myOpenTasks = 0;
+  int _myInProgressTasks = 0;
+  int _myCompletedTasks = 0;
+  int _myOverdueTasks = 0;
 
   // Single Property Stats
   Map<String, dynamic>? _propertyStats;
@@ -57,17 +66,24 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final propNotifier = ref.read(propertyProvider.notifier);
-      await propNotifier.fetchProperties();
-      final props = ref.read(propertyProvider).properties;
-      if (props.isNotEmpty) {
-        final user = ref.read(authProvider).user;
-        if (user?.role == 'admin') {
-          _selectedPropertyId = null; // All Properties
-        } else {
-          _selectedPropertyId = props.first.id;
+      final user = ref.read(authProvider).user;
+      _isStaff = user?.role == 'staff';
+      _isAdmin = user?.role == 'admin';
+
+      if (_isStaff) {
+        _loadStaffDashboard();
+      } else {
+        final propNotifier = ref.read(propertyProvider.notifier);
+        await propNotifier.fetchProperties();
+        final props = ref.read(propertyProvider).properties;
+        if (props.isNotEmpty) {
+          if (user?.role == 'admin') {
+            _selectedPropertyId = null; // All Properties
+          } else {
+            _selectedPropertyId = props.first.id;
+          }
+          _loadAll();
         }
-        _loadAll();
       }
     });
   }
@@ -149,6 +165,16 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
               }
             }
           } catch (_) {}
+          try {
+            final tkRes = await api.get('/properties/${p.id}/tasks?limit=3');
+            final td = tkRes.data['data'];
+            final tks = td is Map ? (td['tasks'] as List?) ?? [] : [];
+            for (final t in tks) {
+              if (t is Map<String, dynamic>) {
+                _aggRecentTasks.add({...t, 'property': {'name': p.name}});
+              }
+            }
+          } catch (_) {}
         }
         _aggRecentBookings.sort((a, b) {
           final aDate = a['createdAt'] ?? '';
@@ -157,7 +183,7 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
         });
       } else {
         // --- SINGLE PROPERTY VIEW: Fire all calls independently ---
-        Map<String, dynamic>? ps, bs, ts, payS;
+        Map<String, dynamic>? ps, bs, ts, payS, fbS;
         List<dynamic> revD = [], bkList = [], tkList = [];
         Map<String, dynamic>? prD, fcD;
 
@@ -171,6 +197,7 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
           api.get('/properties/$_selectedPropertyId/tasks?limit=5').catchError((_) => null),
           api.get('/properties/$_selectedPropertyId/analytics/pricing').catchError((_) => null),
           api.get('/properties/$_selectedPropertyId/analytics/forecast').catchError((_) => null),
+          api.get('/properties/$_selectedPropertyId/feedback/stats').catchError((_) => null),
         ]);
 
         if (results[0] != null) ps = results[0]!.data['data'] as Map<String, dynamic>?;
@@ -188,6 +215,7 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
         }
         if (results[7] != null) prD = results[7]!.data['data'] as Map<String, dynamic>?;
         if (results[8] != null) fcD = results[8]!.data['data'] as Map<String, dynamic>?;
+        if (results[9] != null) fbS = results[9]!.data['data'] as Map<String, dynamic>?;
 
         _propertyStats = ps;
         _bookingStats = bs;
@@ -198,7 +226,36 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
         _recentTasks = tkList.whereType<Map<String, dynamic>>().toList();
         _pricingData = prD;
         _forecastData = fcD;
+        if (fbS != null) {
+          _aggRating = (fbS['averageRating'] ?? fbS['avgRating'] ?? 0).toDouble();
+          _aggTotalReviews = fbS['totalReviews'] ?? fbS['total'] ?? 0;
+        }
       }
+
+      setState(() => _isLoading = false);
+    } catch (_) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadStaffDashboard() async {
+    setState(() => _isLoading = true);
+    final api = ref.read(apiClientProvider);
+
+    try {
+      final res = await api.get('/tasks/my?limit=50');
+      final data = res.data['data'];
+      _myTasks = data is Map ? (data['tasks'] as List?) ?? [] : [];
+
+      _myOpenTasks = _myTasks.where((t) => t['status'] == 'open').length;
+      _myInProgressTasks = _myTasks.where((t) => t['status'] == 'in-progress').length;
+      _myCompletedTasks = _myTasks.where((t) => t['status'] == 'completed').length;
+      final now = DateTime.now();
+      _myOverdueTasks = _myTasks.where((t) =>
+          t['status'] != 'completed' &&
+          t['dueDate'] != null &&
+          DateTime.tryParse(t['dueDate']) != null &&
+          DateTime.parse(t['dueDate']).isBefore(now)).length;
 
       setState(() => _isLoading = false);
     } catch (_) {
@@ -208,8 +265,13 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final props = ref.watch(propertyProvider).properties;
     final user = ref.watch(authProvider).user;
+
+    if (_isStaff) {
+      return _buildStaffDashboard(user);
+    }
+
+    final props = ref.watch(propertyProvider).properties;
     final notifState = ref.watch(notificationProvider);
     final currentNotifications = notifState.notifications.take(5).toList();
 
@@ -368,16 +430,16 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(child: _buildRevenueTrendWidget()),
-                              const SizedBox(width: 16),
+                              if (_isAdmin) Expanded(child: _buildRevenueTrendWidget()),
+                              if (_isAdmin) const SizedBox(width: 16),
                               Expanded(child: _buildCalendarSummaryWidget()),
                             ],
                           )
                         else
                           Column(
                             children: [
-                              _buildRevenueTrendWidget(),
-                              const SizedBox(height: 16),
+                              if (_isAdmin) _buildRevenueTrendWidget(),
+                              if (_isAdmin) const SizedBox(height: 16),
                               _buildCalendarSummaryWidget(),
                             ],
                           ),
@@ -444,6 +506,285 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+
+  // --- STAFF DASHBOARD (Tasks Only) ---
+  Widget _buildStaffDashboard(dynamic user) {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Welcome, ${user?.name ?? 'Staff'}',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                  Text(
+                    'Your assigned tasks and progress',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                  ),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Refresh',
+                onPressed: _loadStaffDashboard,
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Task KPI Cards
+                        _buildStaffTaskKPIs(),
+                        const SizedBox(height: 20),
+                        // My Tasks List
+                        _buildMyTasksList(),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStaffTaskKPIs() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        int crossAxisCount = 4;
+        if (constraints.maxWidth <= 750) {
+          crossAxisCount = 2;
+        }
+
+        final double itemWidth =
+            (constraints.maxWidth - (12 * (crossAxisCount - 1))) /
+            crossAxisCount;
+
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            SizedBox(
+              width: itemWidth,
+              child: _buildKPIItem(
+                "Open Tasks",
+                "$_myOpenTasks Tasks",
+                "Waiting to start",
+                Icons.pending_actions,
+                Colors.orange,
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: _buildKPIItem(
+                "In Progress",
+                "$_myInProgressTasks Tasks",
+                "Currently working",
+                Icons.autorenew,
+                Colors.blue,
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: _buildKPIItem(
+                "Completed",
+                "$_myCompletedTasks Tasks",
+                "Finished tasks",
+                Icons.check_circle_outline,
+                Colors.green,
+              ),
+            ),
+            SizedBox(
+              width: itemWidth,
+              child: _buildKPIItem(
+                "Overdue",
+                "$_myOverdueTasks Tasks",
+                "Past due date",
+                Icons.warning_amber_outlined,
+                Colors.red,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildMyTasksList() {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        side: BorderSide(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'My Assigned Tasks',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => context.go('/web/tasks'),
+                  child: const Text('View All'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_myTasks.isEmpty)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: Text(
+                    'No tasks assigned to you yet.',
+                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                  ),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _myTasks.take(10).length,
+                itemBuilder: (ctx, i) {
+                  final t = _myTasks[i];
+                  final title = t['title'] ?? '-';
+                  final status = t['status'] ?? 'open';
+                  final priority = t['priority'] ?? 'medium';
+                  final dueDate = t['dueDate'] != null
+                      ? DateFormat('dd MMM, hh:mm a').format(DateTime.parse(t['dueDate']))
+                      : 'No due date';
+                  final room = t['room'] is Map ? t['room']['roomNumber'] : t['room'];
+
+                  Color statusColor;
+                  IconData statusIcon;
+                  switch (status) {
+                    case 'completed':
+                      statusColor = Colors.green;
+                      statusIcon = Icons.check_circle;
+                      break;
+                    case 'in-progress':
+                      statusColor = Colors.blue;
+                      statusIcon = Icons.autorenew;
+                      break;
+                    default:
+                      statusColor = Colors.orange;
+                      statusIcon = Icons.pending_actions;
+                  }
+
+                  Color priorityColor;
+                  switch (priority) {
+                    case 'urgent':
+                      priorityColor = Colors.red;
+                      break;
+                    case 'high':
+                      priorityColor = Colors.orange;
+                      break;
+                    default:
+                      priorityColor = Colors.grey;
+                  }
+
+                  final isOverdue = status != 'completed' &&
+                      t['dueDate'] != null &&
+                      DateTime.tryParse(t['dueDate']) != null &&
+                      DateTime.parse(t['dueDate']).isBefore(DateTime.now());
+
+                  return Card(
+                    elevation: 0,
+                    margin: const EdgeInsets.only(bottom: 8),
+                    shape: RoundedRectangleBorder(
+                      side: BorderSide(
+                        color: isOverdue ? Colors.red.withOpacity(0.3) : Colors.grey.shade100,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      leading: CircleAvatar(
+                        backgroundColor: statusColor.withOpacity(0.1),
+                        child: Icon(statusIcon, color: statusColor, size: 20),
+                      ),
+                      title: Text(
+                        title,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      subtitle: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: priorityColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              priority.toUpperCase(),
+                              style: TextStyle(fontSize: 9, color: priorityColor, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          if (room != null)
+                            Text(
+                              'Room $room',
+                              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                            ),
+                          const SizedBox(width: 8),
+                          Icon(Icons.access_time, size: 12, color: isOverdue ? Colors.red : Colors.grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            dueDate,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: isOverdue ? Colors.red : Colors.grey.shade600,
+                              fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: statusColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          status.toString().toUpperCase().replaceAll('-', ' '),
+                          style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      onTap: () => context.go('/web/tasks'),
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -556,16 +897,17 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                 Colors.orange,
               ),
             ),
-            SizedBox(
-              width: itemWidth,
-              child: _buildKPIItem(
-                "Revenue",
-                "LKR ${NumberFormat('#,###').format(totalRev)}",
-                "Today: LKR ${NumberFormat('#,###').format(todayRev)}",
-                Icons.payments,
-                Colors.green,
+            if (_isAdmin)
+              SizedBox(
+                width: itemWidth,
+                child: _buildKPIItem(
+                  "Revenue",
+                  "LKR ${NumberFormat('#,###').format(totalRev)}",
+                  "Today: LKR ${NumberFormat('#,###').format(todayRev)}",
+                  Icons.payments,
+                  Colors.green,
+                ),
               ),
-            ),
             SizedBox(
               width: itemWidth,
               child: _buildKPIItem(

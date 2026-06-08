@@ -17,6 +17,7 @@ import * as auditController from '../controllers/audit.controller.js';
 import { authenticate, authorize } from '../middlewares/auth.middleware.js';
 import validate from '../middlewares/validate.middleware.js';
 import { uploadSingle, uploadMultiple } from '../utils/upload.util.js';
+import { uploadFileToImgBB, uploadMultipleToImgBB } from '../utils/imgbb.util.js';
 import {
   registerSchema,
   loginSchema,
@@ -881,9 +882,26 @@ router.patch('/notifications/read-all', authenticate, notificationController.mar
  *       401:
  *         description: Unauthorized
  */
-router.post('/upload/single', authenticate, uploadSingle('file'), (req, res) => {
-  if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
-  res.json({ success: true, data: { filename: req.file.filename, originalName: req.file.originalname, size: req.file.size, mimetype: req.file.mimetype, url: `/uploads/${req.file.mimetype.startsWith('image') ? 'images' : 'documents'}/${req.file.filename}` } });
+router.post('/upload/single', authenticate, uploadSingle('file'), async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+    const result = await uploadFileToImgBB(req.file);
+    res.json({
+      success: true,
+      data: {
+        url: result.url,
+        displayUrl: result.displayUrl,
+        deleteUrl: result.deleteUrl,
+        width: result.width,
+        height: result.height,
+        size: result.size,
+        originalName: req.file.originalname,
+        mimetype: req.file.mimetype,
+      },
+    });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 /**
@@ -914,10 +932,24 @@ router.post('/upload/single', authenticate, uploadSingle('file'), (req, res) => 
  *       401:
  *         description: Unauthorized
  */
-router.post('/upload/multiple', authenticate, uploadMultiple('files', 5), (req, res) => {
-  if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: 'No files uploaded' });
-  const files = req.files.map(f => ({ filename: f.filename, originalName: f.originalname, size: f.size, mimetype: f.mimetype, url: `/uploads/${f.mimetype.startsWith('image') ? 'images' : 'documents'}/${f.filename}` }));
-  res.json({ success: true, data: { files } });
+router.post('/upload/multiple', authenticate, uploadMultiple('files', 5), async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) return res.status(400).json({ success: false, message: 'No files uploaded' });
+    const results = await uploadMultipleToImgBB(req.files);
+    const files = results.map((r, i) => ({
+      url: r.url,
+      displayUrl: r.displayUrl,
+      deleteUrl: r.deleteUrl,
+      width: r.width,
+      height: r.height,
+      size: r.size,
+      originalName: req.files[i].originalname,
+      mimetype: req.files[i].mimetype,
+    }));
+    res.json({ success: true, data: { files } });
+  } catch (err) {
+    return next(err);
+  }
 });
 
 /**

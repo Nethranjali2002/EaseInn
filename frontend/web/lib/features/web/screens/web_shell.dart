@@ -691,7 +691,12 @@ class WebShell extends ConsumerWidget {
       items.add(_MenuItem(Icons.people_outlined, 'Users', '/web/users'));
     }
 
-    items.add(_MenuItem(Icons.star_outline, 'Feedback', '/web/feedback'));
+    if (role == 'admin' || role == 'manager') {
+      items.add(_MenuItem(Icons.star_outline, 'Feedback', '/web/feedback'));
+    }
+
+    items.add(_MenuItem(Icons.notifications_outlined, 'Notifications', '/web/notifications'));
+
     items.add(
       _MenuItem(Icons.calendar_month_outlined, 'Calendar', '/web/calendar'),
     );
