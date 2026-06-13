@@ -1,11 +1,23 @@
-import PDFDocument from 'pdfkit';
+import PDFDocument from 'pdfkit'; // A popular library for building complex PDFs from scratch
 
+
+// ==========================================
+// 1. GENERATE BOOKING REPORT PDF
+// Creates a beautifully formatted printable report of reservations.
+// Useful for managers to hand to accountants or for archiving.
+// ==========================================
 export const generateBookingReportPdf = (res, { bookings, property, startDate, endDate }) => {
+  // Initialize the document in standard A4 printer paper size
   const doc = new PDFDocument({ margin: 40, size: 'A4' });
+  
+  // Set the HTTP headers so the browser knows a file is downloading, not just text
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename=booking-report-${Date.now()}.pdf`);
+  
+  // "Pipe" the generated PDF bytes directly into the user's download stream
   doc.pipe(res);
 
+  // --- Header Section ---
   doc.fontSize(20).font('Helvetica-Bold').text('EaseInn - Booking Report', { align: 'center' });
   doc.moveDown(0.3);
   doc.fontSize(11).font('Helvetica').text(`Property: ${property?.name || 'All'}`, { align: 'center' });
@@ -16,24 +28,31 @@ export const generateBookingReportPdf = (res, { bookings, property, startDate, e
   doc.text(`Generated: ${new Date().toLocaleDateString()}`, { align: 'center' });
   doc.moveDown(1);
 
+  // --- Summary Section ---
+  // Calculates high-level math for the top of the report
   doc.fontSize(14).font('Helvetica-Bold').text('Booking Summary');
   doc.moveDown(0.3);
   doc.fontSize(10).font('Helvetica');
   doc.text(`Total Bookings: ${bookings.length}`);
+  
   const totalRevenue = bookings.reduce((sum, b) => sum + (b.pricing?.totalAmount || 0), 0);
   doc.text(`Total Revenue: LKR ${totalRevenue.toLocaleString()}`);
+  
   const checkedIn = bookings.filter(b => b.bookingStatus === 'checked-in').length;
   const confirmed = bookings.filter(b => b.bookingStatus === 'confirmed').length;
   doc.text(`Checked In: ${checkedIn} | Confirmed: ${confirmed}`);
   doc.moveDown(1);
 
+  // --- Detailed Table Section ---
   doc.fontSize(14).font('Helvetica-Bold').text('Booking Details');
   doc.moveDown(0.3);
 
   const tableTop = doc.y;
+  // Specific column widths so everything lines up perfectly like Excel
   const colWidths = [80, 60, 65, 65, 50, 70, 60];
   const headers = ['Guest', 'Room', 'Check-In', 'Check-Out', 'Guests', 'Total', 'Status'];
 
+  // Draw Table Headers
   doc.fontSize(8).font('Helvetica-Bold');
   let x = 40;
   headers.forEach((h, i) => {
@@ -44,14 +63,18 @@ export const generateBookingReportPdf = (res, { bookings, property, startDate, e
   doc.moveDown(0.5);
   doc.font('Helvetica').fontSize(8);
 
+  // Draw Table Rows (Limited to 40 to prevent massive PDFs from crashing the server)
   bookings.slice(0, 40).forEach((b, idx) => {
+    // If we are reaching the bottom of the A4 page, automatically create a new page
     if (doc.y > 750) {
       doc.addPage();
     }
     const y = doc.y;
     let cx = 40;
+    
+    // Format the data for the current row
     const row = [
-      b.guest?.name?.substring(0, 12) || '-',
+      b.guest?.name?.substring(0, 12) || '-', // Truncate long names so they don't break the table
       b.room?.roomNumber || '-',
       new Date(b.checkIn).toLocaleDateString(),
       new Date(b.checkOut).toLocaleDateString(),
@@ -59,21 +82,30 @@ export const generateBookingReportPdf = (res, { bookings, property, startDate, e
       `LKR ${(b.pricing?.totalAmount || 0).toLocaleString()}`,
       b.bookingStatus,
     ];
+    
+    // Draw each cell
     row.forEach((cell, i) => {
       doc.text(cell, cx, y, { width: colWidths[i] });
       cx += colWidths[i];
     });
     doc.moveDown(0.5);
 
+    // Draw a subtle gray divider line between rows
     if (idx < bookings.length - 1) {
       doc.moveTo(40, doc.y).lineTo(570, doc.y).strokeColor('#cccccc').lineWidth(0.5).stroke();
       doc.moveDown(0.3);
     }
   });
 
+  // Finalize the PDF file and send it
   doc.end();
 };
 
+
+// ==========================================
+// 2. GENERATE PAYMENT REPORT PDF
+// Extremely similar to the Booking report, but tailored specifically for invoices and accounting
+// ==========================================
 export const generatePaymentReportPdf = (res, { payments, property }) => {
   const doc = new PDFDocument({ margin: 40, size: 'A4' });
   res.setHeader('Content-Type', 'application/pdf');

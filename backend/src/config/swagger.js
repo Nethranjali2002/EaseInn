@@ -1,18 +1,24 @@
-import swaggerJsdoc from 'swagger-jsdoc';
-import swaggerUi from 'swagger-ui-express';
+import swaggerJsdoc from 'swagger-jsdoc'; // Tool to read `/* @swagger */` comments from our code and turn them into JSON
+import swaggerUi from 'swagger-ui-express'; // Tool to generate a beautiful HTML webpage from that JSON
 
+// ==========================================
+// SWAGGER CONFIGURATION
+// This powers the interactive API documentation page available at /api-docs
+// ==========================================
 const options = {
   definition: {
-    openapi: '3.0.0',
+    openapi: '3.0.0', // We are using OpenAPI specification version 3
     info: {
       title: 'EaseInn API',
       version: '1.0.0',
       description: 'Resort Property Management System API',
     },
     servers: [
+      // The base URL that the "Try it out" buttons will send requests to
       { url: 'http://localhost:3000/api/v1', description: 'Development' },
     ],
     components: {
+      // Tells Swagger that our API requires a "Bearer Token" in the Authorization header
       securitySchemes: {
         bearerAuth: {
           type: 'http',
@@ -20,6 +26,10 @@ const options = {
           bearerFormat: 'JWT',
         },
       },
+      // ==========================================
+      // REUSABLE SCHEMAS (Data Models)
+      // We define these here so we don't have to re-type them in every single route's documentation
+      // ==========================================
       schemas: {
         User: {
           type: 'object',
@@ -83,6 +93,7 @@ const options = {
             invoiceNumber: { type: 'string' },
           },
         },
+        // Standardized Error Response Model
         Error: {
           type: 'object',
           properties: {
@@ -92,17 +103,27 @@ const options = {
         },
       },
     },
+    // Applies the Bearer Token requirement globally to all endpoints by default
     security: [{ bearerAuth: [] }],
   },
+  // Tells the Swagger engine to go look inside the 'routes' folder and scrape out all the comments
   apis: ['./src/routes/*.js'],
 };
 
+// Generate the final JSON specification
 const swaggerSpec = swaggerJsdoc(options);
 
+// ==========================================
+// SETUP SWAGGER
+// Mounts the HTML UI and the raw JSON file to our Express app
+// ==========================================
 export const setupSwagger = (app) => {
+  // Mount the interactive UI to the /api-docs route
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
+    customCss: '.swagger-ui .topbar { display: none }', // Hide the green Swagger logo bar for a cleaner look
     customSiteTitle: 'EaseInn API Documentation',
   }));
+  
+  // Provide the raw JSON file at /api-docs.json (useful if you want to import our API into Postman)
   app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
 };

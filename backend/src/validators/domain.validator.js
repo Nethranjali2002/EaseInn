@@ -1,8 +1,18 @@
 import Joi from 'joi';
 
+// ==========================================
+// DOMAIN VALIDATORS (The Business Logic Gatekeepers)
+// These schemas validate all the core business entities: Hotels, Rooms, Bookings, Tasks, and Payments.
+// By strictly typing and validating the input here, we prevent our database from filling up with junk data.
+// ==========================================
+
+// ==========================================
+// PROPERTIES (HOTELS)
+// ==========================================
 export const createPropertySchema = Joi.object({
   name: Joi.string().trim().max(200).required(),
   description: Joi.string().trim().max(2000).optional(),
+  // Nested object validation for structured address data
   address: Joi.object({
     street: Joi.string().trim().optional(),
     city: Joi.string().trim().required(),
@@ -13,14 +23,14 @@ export const createPropertySchema = Joi.object({
   contact: Joi.object({
     phone: Joi.string().trim().optional(),
     email: Joi.string().email().trim().lowercase().optional(),
-    website: Joi.string().uri().trim().optional(),
+    website: Joi.string().uri().trim().optional(), // Ensure valid URL format
   }).optional(),
   amenities: Joi.array().items(Joi.string().trim()).optional(),
   images: Joi.array().items(Joi.string()).optional(),
   logo: Joi.string().optional().allow(''),
   coverImage: Joi.string().optional().allow(''),
   isActive: Joi.boolean().optional(),
-  taxRate: Joi.number().min(0).max(100).optional(),
+  taxRate: Joi.number().min(0).max(100).optional(), // Taxes must be a percentage between 0 and 100
 });
 
 export const updatePropertySchema = Joi.object({
@@ -46,12 +56,15 @@ export const updatePropertySchema = Joi.object({
   taxRate: Joi.number().min(0).max(100).optional(),
 }).min(1);
 
+// ==========================================
+// ROOMS
+// ==========================================
 export const createRoomSchema = Joi.object({
   roomNumber: Joi.string().trim().required(),
   roomType: Joi.string().valid('single', 'double', 'triple', 'suite', 'family', 'deluxe', 'presidential').required(),
   name: Joi.string().trim().max(100).optional(),
-  capacity: Joi.number().integer().min(1).max(20).required(),
-  basePrice: Joi.number().min(0).required(),
+  capacity: Joi.number().integer().min(1).max(20).required(), // You can't have half a person, so it must be an integer
+  basePrice: Joi.number().min(0).required(), // Pricing cannot be negative
   description: Joi.string().trim().max(1000).optional(),
   amenities: Joi.array().items(Joi.string().trim()).optional(),
   images: Joi.array().items(Joi.string()).optional(),
@@ -96,6 +109,9 @@ export const updateRoomSchema = Joi.object({
   })).optional(),
 }).min(1);
 
+// ==========================================
+// BOOKINGS
+// ==========================================
 export const createBookingSchema = Joi.object({
   property: Joi.string().hex().length(24).required(),
   room: Joi.string().hex().length(24).required(),
@@ -110,6 +126,7 @@ export const createBookingSchema = Joi.object({
     nationality: Joi.string().trim().optional(),
   }).required(),
   checkIn: Joi.date().required(),
+  // CRITICAL: checkOut date must be STRICTLY GREATER THAN the checkIn date to prevent zero-night or negative-night bookings
   checkOut: Joi.date().greater(Joi.ref('checkIn')).required(),
   numberOfGuests: Joi.number().integer().min(1).required(),
   adults: Joi.number().integer().min(0).optional(),
@@ -156,6 +173,9 @@ export const updateBookingSchema = Joi.object({
   cancellationReason: Joi.string().trim().max(500).optional(),
 }).min(1);
 
+// ==========================================
+// INTERNAL STAFF TASKS
+// ==========================================
 export const createTaskSchema = Joi.object({
   property: Joi.string().hex().length(24).required(),
   title: Joi.string().trim().max(200).required(),
@@ -196,10 +216,13 @@ export const completeTaskSchema = Joi.object({
   completionNotes: Joi.string().trim().max(2000).optional(),
 });
 
+// ==========================================
+// PAYMENTS & FEEDBACK
+// ==========================================
 export const createPaymentSchema = Joi.object({
   booking: Joi.string().hex().length(24).required(),
   amount: Joi.number().min(0).required(),
-  currency: Joi.string().uppercase().length(3).optional(),
+  currency: Joi.string().uppercase().length(3).optional(), // Enforce 3-letter currency codes (e.g. "LKR", "USD")
   method: Joi.string().valid('cash', 'card', 'bank_transfer', 'online', 'other').optional(),
   type: Joi.string().valid('advance', 'partial', 'full', 'refund').required(),
   gateway: Joi.object({
@@ -215,8 +238,8 @@ export const respondFeedbackSchema = Joi.object({
 }).min(1);
 
 export const submitReviewSchema = Joi.object({
-  token: Joi.string().hex().length(64).required(),
-  rating: Joi.number().integer().min(1).max(5).required(),
+  token: Joi.string().hex().length(64).required(), // Security token requirement
+  rating: Joi.number().integer().min(1).max(5).required(), // Ratings strictly 1 to 5
   title: Joi.string().trim().max(200).optional(),
   comment: Joi.string().trim().max(2000).optional(),
   categories: Joi.object({
@@ -228,6 +251,7 @@ export const submitReviewSchema = Joi.object({
   }).optional(),
 });
 
+// Used specifically for public-facing guest booking endpoints (stricter than staff creation)
 export const guestBookingSchema = Joi.object({
   property: Joi.string().hex().length(24).required(),
   room: Joi.string().hex().length(24).required(),
@@ -253,4 +277,3 @@ export const guestBookingSchema = Joi.object({
   })).optional(),
   specialRequests: Joi.string().trim().max(500).optional(),
 });
-

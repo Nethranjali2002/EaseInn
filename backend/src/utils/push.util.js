@@ -1,26 +1,35 @@
-import Notification from '../models/notification.model.js';
-import User from '../models/user.model.js';
-import { sendEmail } from './email.util.js';
-import { sendSMS, sendBookingSMS } from './sms.util.js';
-import logger from './logger.util.js';
+import Notification from '../models/notification.model.js'; // The database model that powers the little "bell" icon in the UI
+import User from '../models/user.model.js'; // The database model for staff/managers
+import { sendEmail } from './email.util.js'; // Email helper
+import { sendSMS, sendBookingSMS } from './sms.util.js'; // SMS helper
+import logger from './logger.util.js'; // Server logging
 
+
+// ==========================================
+// 1. SEND PUSH NOTIFICATION (Core Engine)
+// The master function. It can simultaneously drop a message in the database (for the bell icon),
+// send an email, AND send a text message, depending on what `channels` are requested.
+// ==========================================
 export const sendPushNotification = async (userId, { title, message, data, channels }) => {
   try {
+    // 1. Always create the in-app notification for the bell icon
     const notification = await Notification.create({
       recipient: userId,
       type: data?.type || 'system',
       title,
       message,
       data,
-      channels: channels || { inApp: true },
+      channels: channels || { inApp: true }, // Default to only in-app if nothing is specified
       sent: true,
       sentAt: new Date(),
     });
 
+    // 2. If the sender explicitly asked to send an email, and provided an email address, send it
     if (channels?.email && data?.email) {
       await sendEmail({ to: data.email, subject: title, html: `<p>${message}</p>` }).catch(() => {});
     }
 
+    // 3. If the sender explicitly asked to send an SMS, and provided a phone number, send it
     if (channels?.sms && data?.phone) {
       await sendSMS(data.phone, message).catch(() => {});
     }
@@ -31,8 +40,14 @@ export const sendPushNotification = async (userId, { title, message, data, chann
   }
 };
 
+
+// ==========================================
+// 2. SEND BOOKING CONFIRMATION NOTIFICATION
+// A massive "broadcast" function triggered when a new reservation is made.
+// It ensures everyone (the creator, the managers, the guest) is kept in the loop.
+// ==========================================
 export const sendBookingConfirmationNotification = async (booking) => {
-  // Notify the person who created the booking
+  // A. Notify the staff member who typed in the booking (so they know it saved successfully)
   await sendPushNotification(booking.createdBy, {
     title: 'Booking Confirmed',
     message: `Booking for ${booking.guest?.name} has been confirmed`,
@@ -40,8 +55,9 @@ export const sendBookingConfirmationNotification = async (booking) => {
     channels: { inApp: true, email: true },
   });
 
-  // Notify all managers and admins
+  // B. Notify ALL Managers and Admins (so leadership knows money is coming in)
   try {
+    // Find every single active manager in the system
     const managers = await User.find({
       role: { $in: ['admin', 'manager'] },
       isActive: true,
@@ -49,8 +65,11 @@ export const sendBookingConfirmationNotification = async (booking) => {
     }).select('_id');
 
     const creatorId = booking.createdBy?.toString();
+    
+    // Blast out notifications in parallel to speed things up
     await Promise.all(
       managers
+        // Filter out the person who created the booking (they already got notified in step A)
         .filter((m) => m._id.toString() !== creatorId)
         .map((m) =>
           sendPushNotification(m._id, {
@@ -65,7 +84,7 @@ export const sendBookingConfirmationNotification = async (booking) => {
     logger.error(`Manager notification for booking confirmation failed: ${err.message}`);
   }
 
-  // Send SMS to guest if phone number is available
+  // C. Send a Welcome SMS directly to the Guest's phone
   if (booking.guest?.phone) {
     sendBookingSMS(booking.guest.phone, booking.guest.name, {
       checkIn: booking.checkIn,
@@ -74,8 +93,13 @@ export const sendBookingConfirmationNotification = async (booking) => {
   }
 };
 
+
+// ==========================================
+// 3. SEND PAYMENT RECEIVED NOTIFICATION
+// Broadcasts to management when money hits the account
+// ==========================================
 export const sendPaymentReceivedNotification = async (payment) => {
-  // Notify the person who recorded the payment
+  // A. Notify the staff member who pressed "Accept Cash"
   await sendPushNotification(payment.recordedBy, {
     title: 'Payment Received',
     message: `LKR ${payment.amount} received via ${payment.method}`,
@@ -83,7 +107,7 @@ export const sendPaymentReceivedNotification = async (payment) => {
     channels: { inApp: true },
   });
 
-  // Notify all managers and admins
+  // B. Notify all managers
   try {
     const managers = await User.find({
       role: { $in: ['admin', 'manager'] },
@@ -109,10 +133,15 @@ export const sendPaymentReceivedNotification = async (payment) => {
   }
 };
 
-export const sendTaskAssignedNotification = async (task) => {
-  if (!task.assignedTo) return;
 
-  // Notify the assigned staff member
+// ==========================================
+// 4. SEND TASK ASSIGNED NOTIFICATION
+// Pings a housekeeper/maintenance worker when a manager gives them a chore
+// ==========================================
+export const sendTaskAssignedNotification = async (task) => {
+  if (!task.assignedTo) return; // If nobody is assigned, do nothing
+
+  // A. Notify the specific staff member who was assigned the job
   await sendPushNotification(task.assignedTo, {
     title: 'New Task Assigned',
     message: task.title,
@@ -120,7 +149,7 @@ export const sendTaskAssignedNotification = async (task) => {
     channels: { inApp: true },
   });
 
-  // Notify all managers and admins
+  // B. Notify all managers (so leadership has visibility into what chores are being assigned)
   try {
     const managers = await User.find({
       role: { $in: ['admin', 'manager'] },
@@ -131,7 +160,7 @@ export const sendTaskAssignedNotification = async (task) => {
     const assigneeId = task.assignedTo?.toString();
     await Promise.all(
       managers
-        .filter((m) => m._id.toString() !== assigneeId)
+        .filter((m) => m._id.toString() !== assigneeId) // Don't notify the assignee twice if they happen to be a manager
         .map((m) =>
           sendPushNotification(m._id, {
             title: 'Task Assigned',
@@ -146,8 +175,13 @@ export const sendTaskAssignedNotification = async (task) => {
   }
 };
 
+
+// ==========================================
+// 5. SEND TASK COMPLETED NOTIFICATION
+// Pings management when a housekeeper finishes their job
+// ==========================================
 export const sendTaskCompletedNotification = async (task) => {
-  // Notify the person who created/assigned the task
+  // A. Notify the specific manager who originally requested the chore
   if (task.assignedBy) {
     await sendPushNotification(task.assignedBy, {
       title: 'Task Completed',
@@ -157,7 +191,7 @@ export const sendTaskCompletedNotification = async (task) => {
     });
   }
 
-  // Notify all managers and admins
+  // B. Notify all other managers
   try {
     const managers = await User.find({
       role: { $in: ['admin', 'manager'] },
@@ -166,7 +200,8 @@ export const sendTaskCompletedNotification = async (task) => {
     }).select('_id');
 
     const creatorId = task.assignedBy?.toString();
-    const completerId = task.completedBy?.toString();
+    const completerId = task.completedBy?.toString(); // Don't notify the person who just completed it
+    
     await Promise.all(
       managers
         .filter((m) => {
