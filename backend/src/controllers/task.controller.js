@@ -1,6 +1,7 @@
 import * as taskService from '../services/task.service.js'; // Imports the Brain handling Staff Tasks (e.g. housekeeping)
 import { sendSuccess } from '../utils/response.util.js'; // Helper for formatting JSON responses
 import { logAudit } from '../utils/audit.util.js'; // Records task creation and assignment for accountability
+import { sendTaskAssignedNotification, sendTaskCompletedNotification } from '../utils/push.util.js';
 
 
 // ==========================================
@@ -14,6 +15,9 @@ export const createTask = async (req, res, next) => {
     // Log exactly who created this task and for what
     await logAudit({ user: req.user.sub, action: 'create', entity: 'Task', entityId: task._id, description: `Created task: ${task.title}`, ip: req.ip });
     
+    // Notify the assigned staff member and managers
+    sendTaskAssignedNotification(task).catch(() => {});
+    
     // Respond with a 201 Created and the new task object
     return sendSuccess(res, { statusCode: 201, message: 'Task created', data: { task } });
   } catch (err) { return next(err); }
@@ -21,7 +25,19 @@ export const createTask = async (req, res, next) => {
 
 
 // ==========================================
-// 2. GET TASKS
+// 2. GET MY TASKS
+// ==========================================
+export const getMyTasks = async (req, res, next) => {
+  try {
+    const { page, limit, status } = req.query;
+    const result = await taskService.getMyTasks(req.user.sub, { page: parseInt(page) || 1, limit: parseInt(limit) || 20, status });
+    return sendSuccess(res, { data: result });
+  } catch (err) { return next(err); }
+};
+
+
+// ==========================================
+// 3. GET TASKS
 // ==========================================
 export const getTasks = async (req, res, next) => {
   try {
@@ -60,13 +76,35 @@ export const updateTask = async (req, res, next) => {
     // Log the exact update
     await logAudit({ user: req.user.sub, action: 'update', entity: 'Task', entityId: task._id, description: `Updated task: ${task.title}`, ip: req.ip });
     
+    // If the task was reassigned, notify the new assignee
+    if (req.body.assignedTo) {
+      sendTaskAssignedNotification(task).catch(() => {});
+    }
+    
     return sendSuccess(res, { message: 'Task updated', data: { task } });
   } catch (err) { return next(err); }
 };
 
 
 // ==========================================
-// 5. UPDATE TASK STATUS
+// 5. COMPLETE TASK
+// ==========================================
+export const completeTask = async (req, res, next) => {
+  try {
+    const task = await taskService.completeTask(req.params.id, req.user.sub, req.user.role, req.body);
+    
+    await logAudit({ user: req.user.sub, action: 'update', entity: 'Task', entityId: task._id, description: 'Task completed', ip: req.ip });
+    
+    // Notify the task creator and managers that the task is done
+    sendTaskCompletedNotification(task).catch(() => {});
+    
+    return sendSuccess(res, { message: 'Task completed', data: { task } });
+  } catch (err) { return next(err); }
+};
+
+
+// ==========================================
+// 6. UPDATE TASK STATUS
 // ==========================================
 export const updateTaskStatus = async (req, res, next) => {
   try {

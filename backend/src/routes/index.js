@@ -1298,6 +1298,7 @@ router.post('/properties/:propertyId/rooms/bulk', authenticate, authorize(...man
     const { generateRoomCode } = await import('../utils/codeGenerator.js');
     const { logAudit } = await import('../utils/audit.util.js');
 
+
     const property = await Property.findById(req.params.propertyId);
     if (!property) return res.status(404).json({ success: false, message: 'Property not found' });
     if (property.owner.toString() !== req.user.sub) {

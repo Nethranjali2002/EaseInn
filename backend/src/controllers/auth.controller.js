@@ -2,11 +2,10 @@ import * as authService from '../services/auth.service.js'; // Imports the "Brai
 import { sendSuccess } from '../utils/response.util.js'; // Imports our custom helper that formats JSON success messages perfectly
 import { logAudit } from '../utils/audit.util.js'; // Imports our spy tool that silently records every action into the database
 
-// ==========================================
+
 // 1. REGISTER NEW USER
-// Takes the incoming user details from the frontend,
-// passes them to the Service to create the account, and returns tokens.
-// ==========================================
+
+
 export const register = async (req, res, next) => {
   try {
     // Call the Service layer with the JSON body (email, password, etc.)
@@ -35,6 +34,7 @@ export const register = async (req, res, next) => {
 // ==========================================
 export const login = async (req, res, next) => {
   try {
+    
     // Ask the Service layer to check the email and password combination
     // If they match, it gives us the user profile and tokens back
     const { user, accessToken, refreshToken } = await authService.login(req.body);
