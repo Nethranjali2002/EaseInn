@@ -124,41 +124,6 @@ class User {
     );
   }
 
-  /// ==========================================
-  /// TO JSON - Convert User Object to Map
-  /// ==========================================
-  /// Serializes the User object back to a JSON-compatible map.
-  /// Used when sending updated user data to the backend.
-  /// ==========================================
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'role': role,
-      'isActive': isActive,
-      'employeeId': employeeId,
-      'dateOfBirth': dateOfBirth,
-      'gender': gender,
-      'nicPassport': nicPassport,
-      'phone': phone,
-      'address': address,
-      'city': city,
-      'district': district,
-      'postalCode': postalCode,
-      'joinDate': joinDate,
-      'employmentType': employmentType,
-      'property': property,
-      'emergencyName': emergencyName,
-      'emergencyRelationship': emergencyRelationship,
-      'emergencyPhone': emergencyPhone,
-      'status': status,
-      'nicCopy': nicCopy,
-      'agreement': agreement,
-      'certificates': certificates,
-      'profileImage': profileImage,
-    };
-  }
 }
 
 /// ==========================================
@@ -197,26 +162,6 @@ class UserNotifier extends Notifier<UserState> {
   ApiClient get _api => ref.read(apiClientProvider);
 
   /// ==========================================
-  /// FETCH PROFILE - Load Current User's Data
-  /// ==========================================
-  /// Retrieves the full profile for the currently logged-in user
-  /// from the backend's /users/me endpoint.
-  /// ==========================================
-  Future<void> fetchProfile() async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final response = await _api.get('/users/me');
-      final userData = response.data['data'] ?? response.data['user'];
-      final user = User.fromJson(userData as Map<String, dynamic>);
-      state = state.copyWith(user: user, isLoading: false);
-    } on ApiException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Failed to load profile');
-    }
-  }
-
-  /// ==========================================
   /// UPDATE PROFILE - Modify User Information
   /// ==========================================
   /// Updates the current user's profile with the provided fields.
@@ -237,28 +182,6 @@ class UserNotifier extends Notifier<UserState> {
       state = state.copyWith(isLoading: false, error: e.message);
     } catch (e) {
       state = state.copyWith(isLoading: false, error: 'Failed to update profile');
-    }
-  }
-
-  /// ==========================================
-  /// DELETE ACCOUNT - Permanently Remove User
-  /// ==========================================
-  /// Deletes the current user's account from the backend.
-  /// After deletion, automatically logs the user out.
-  /// ==========================================
-  Future<bool> deleteAccount() async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      await _api.delete('/users/me');
-      await ref.read(authProvider.notifier).logout();
-      state = UserState();
-      return true;
-    } on ApiException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-      return false;
-    } catch (e) {
-      state = state.copyWith(isLoading: false, error: 'Failed to delete account');
-      return false;
     }
   }
 }

@@ -19,7 +19,6 @@ library shared;
 // API communication
 export 'core/api/api_client.dart';       // HTTP client for backend communication
 export 'core/api/api_exception.dart';    // Custom error type for API failures
-export 'core/api/api_interceptor.dart';  // Auto token refresh on 401 errors
 
 // Secure storage
 export 'core/storage/secure_storage.dart'; // Encrypted JWT token persistence

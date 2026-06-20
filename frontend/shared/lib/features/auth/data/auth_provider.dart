@@ -291,24 +291,6 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   /// ==========================================
-  /// RESET PASSWORD - Set New Password with Token
-  /// ==========================================
-  /// Uses the token from the password reset email to set a new password.
-  /// Returns true if the password was reset successfully.
-  /// ==========================================
-  Future<bool> resetPassword(String token, String password) async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      await _api.post('/auth/reset-password', data: {'token': token, 'password': password});
-      state = state.copyWith(isLoading: false);
-      return true;
-    } on ApiException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-      return false;
-    }
-  }
-
-  /// ==========================================
   /// CHANGE PASSWORD - Update Password for Logged-in User
   /// ==========================================
   /// Changes the password for the currently authenticated user.

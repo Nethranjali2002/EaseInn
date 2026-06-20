@@ -184,23 +184,6 @@ class PropertyNotifier extends Notifier<PropertyState> {
   }
 
   /// ==========================================
-  /// FETCH PROPERTY BY ID - Load Single Property Details
-  /// ==========================================
-  /// Retrieves detailed information for a specific property.
-  /// Sets the selectedProperty in state for detail screens.
-  /// ==========================================
-  Future<void> fetchPropertyById(String id) async {
-    state = state.copyWith(isLoading: true, error: null);
-    try {
-      final response = await _api.get('/properties/$id');
-      final property = Property.fromJson(response.data['data']['property']);
-      state = state.copyWith(selectedProperty: property, isLoading: false);
-    } on ApiException catch (e) {
-      state = state.copyWith(isLoading: false, error: e.message);
-    }
-  }
-
-  /// ==========================================
   /// CREATE PROPERTY - Add New Property
   /// ==========================================
   /// Sends property data to the backend to create a new property.

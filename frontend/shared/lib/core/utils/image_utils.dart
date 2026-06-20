@@ -34,21 +34,3 @@ String resolveImageUrl(String? path) {
   return '$_backendBaseUrl$path';
 }
 
-/// ==========================================
-/// isCloudImageUrl - Check if Image is Cloud-Hosted
-/// ==========================================
-/// Determines if a URL points to a cloud-hosted image service.
-/// Useful for deciding whether to use caching, special headers,
-/// or different loading strategies for cloud vs local images.
-///
-/// Checks for known image hosting services:
-/// - ImgBB (https://i.ibb.co/...)
-/// - Imgur (https://i.imgur.com/...)
-/// - Cloudinary (https://res.cloudinary.com/...)
-/// ==========================================
-bool isCloudImageUrl(String? url) {
-  if (url == null || url.isEmpty) return false;
-  return url.startsWith('https://i.ibb.co/') ||
-      url.startsWith('https://i.imgur.com/') ||
-      url.startsWith('https://res.cloudinary.com/');
-}
