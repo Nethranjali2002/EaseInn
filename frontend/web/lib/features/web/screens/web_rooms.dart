@@ -1,3 +1,20 @@
+/// Room Management Screen — CRUD, filters, bulk creation, price management.
+///
+/// Displays all rooms across properties in a filterable data table. Provides full
+/// room lifecycle management including creation, editing, status changes, and
+/// bulk room creation for efficient setup of new properties.
+///
+/// Key features:
+/// - Summary cards: total rooms, available, occupied, maintenance, out-of-service
+/// - Filters: search by room number/property, status, room type, property assignment
+/// - Room creation/editing dialog with property-dependent room type selection
+/// - Bulk room creation: generate multiple rooms with floor and numbering options
+/// - Inline room type management from within the room dialog
+/// - Status toggle dropdown for quick status changes
+/// - Price management via dialog for setting base/weekend/seasonal rates
+///
+/// State management: roomProvider (Riverpod) with onRefresh. Selected room tracked
+/// locally for action menus. Property list fetched separately for filter/dropdown options.
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -9,6 +26,7 @@ import 'package:shared/shared.dart';
 import '../widgets/web_data_table.dart';
 import '../widgets/web_form_dialog.dart';
 
+/// Main room management screen for admin and manager roles.
 class WebRoomsScreen extends ConsumerStatefulWidget {
   const WebRoomsScreen({super.key});
 
@@ -21,12 +39,13 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
   final TextEditingController _minPriceController = TextEditingController();
   final TextEditingController _maxPriceController = TextEditingController();
 
+  // Filter state variables — all default to show everything
   String _searchQuery = '';
   String? _selectedPropertyId = 'All';
   String _selectedRoomType = 'All';
   String _selectedRoomStatus = 'All';
-  double? _minPrice;
-  double? _maxPrice;
+  double? _minPrice; // Price range filter lower bound
+  double? _maxPrice; // Price range filter upper bound
 
   @override
   void initState() {
@@ -53,6 +72,7 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
     super.dispose();
   }
 
+  /// Initial data load: fetch properties, then rooms for the selected property.
   Future<void> _loadData() async {
     await ref.read(propertyProvider.notifier).fetchProperties();
     final properties = ref.read(propertyProvider).properties;
@@ -63,9 +83,12 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
     }
   }
 
+  /// Fetches rooms for a specific property or all properties if pid == 'All'.
+  /// Updates the roomProvider state with loading indicator and results.
   Future<void> _fetchRoomsForProperty(String pid) async {
     final properties = ref.read(propertyProvider).properties;
     if (pid == 'All') {
+      // Show loading state immediately while fetching from multiple properties
       ref.read(roomProvider.notifier).state = RoomState(
         isLoading: true,
         rooms: [],

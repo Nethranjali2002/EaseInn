@@ -3,22 +3,36 @@ import '../../../core/api/api_client.dart';
 import '../../../core/api/api_exception.dart';
 import '../../auth/data/auth_provider.dart';
 
+/// ==========================================
+/// TASK ITEM - Staff Task Data Model
+/// ==========================================
+/// Represents a task assigned to staff members (housekeeping, maintenance,
+/// support, etc.). Tasks are scoped to a property and can be assigned
+/// to specific staff members.
+///
+/// Key features:
+/// - Subtasks: Break a task into smaller steps
+/// - Checklists: Verification items to confirm completion
+/// - Completion images: Staff can upload photos as proof of work
+/// - Priority levels: low, medium, high, urgent
+/// - Status tracking: open -> in-progress -> completed
+/// ==========================================
 class TaskItem {
   final String id;
-  final String code;
+  final String code; // Human-readable code like "TSK-0001"
   final String propertyId;
   final String title;
   final String description;
-  final String type;
-  final String priority;
-  final String status;
-  final String assignedToName;
-  final String roomNumber;
+  final String type; // 'housekeeping', 'maintenance', 'support', etc.
+  final String priority; // 'low', 'medium', 'high', 'urgent'
+  final String status; // 'open', 'in-progress', 'completed'
+  final String assignedToName; // Name of the assigned staff member
+  final String roomNumber; // Associated room (if applicable)
   final DateTime? dueDate;
   final DateTime? completedAt;
-  final List<Map<String, dynamic>> subtasks;
-  final List<Map<String, dynamic>> checklist;
-  final List<String> completedImages;
+  final List<Map<String, dynamic>> subtasks; // Sub-steps within the task
+  final List<Map<String, dynamic>> checklist; // Verification items
+  final List<String> completedImages; // Photo proof of completion
 
   TaskItem({
     required this.id,
@@ -38,6 +52,12 @@ class TaskItem {
     this.completedImages = const [],
   });
 
+  /// ==========================================
+  /// JSON PARSER - Handle Populated References
+  /// ==========================================
+  /// The backend populates 'assignedTo' and 'room' as nested objects.
+  /// This parser safely extracts names/numbers from those objects.
+  /// ==========================================
   factory TaskItem.fromJson(Map<String, dynamic> json) {
     return TaskItem(
       id: json['_id'] ?? json['id'] ?? '',
@@ -50,9 +70,11 @@ class TaskItem {
       type: json['type'] ?? 'housekeeping',
       priority: json['priority'] ?? 'medium',
       status: json['status'] ?? 'open',
+      // Extract name from populated user object
       assignedToName: (json['assignedTo'] is Map)
           ? (json['assignedTo']['name'] ?? '')
           : '',
+      // Extract room number from populated room object
       roomNumber: (json['room'] is Map)
           ? (json['room']['roomNumber'] ?? '')
           : '',
@@ -67,6 +89,9 @@ class TaskItem {
   }
 }
 
+/// ==========================================
+/// TASK STATE - State Container
+/// ==========================================
 class TaskState {
   final List<TaskItem> tasks;
   final bool isLoading;
@@ -95,6 +120,15 @@ class TaskState {
   }
 }
 
+/// ==========================================
+/// TASK PROVIDER - Task State Manager
+/// ==========================================
+/// Manages all task operations:
+/// - Fetching tasks (per-property or user's own tasks)
+/// - Creating, updating, completing tasks
+/// - Toggling subtasks and checklists
+/// - Clearing task data on logout
+/// ==========================================
 final taskProvider = NotifierProvider<TaskNotifier, TaskState>(
   TaskNotifier.new,
 );
@@ -105,6 +139,13 @@ class TaskNotifier extends Notifier<TaskState> {
 
   ApiClient get _api => ref.read(apiClientProvider);
 
+  /// ==========================================
+  /// FETCH TASKS - Load Tasks for a Property
+  /// ==========================================
+  /// Retrieves all tasks belonging to a specific property.
+  /// Used by managers/admins to view property-level task assignments.
+  /// Supports optional filtering by status and task type.
+  /// ==========================================
   Future<void> fetchTasks(
     String propertyId, {
     String? status,
@@ -130,6 +171,12 @@ class TaskNotifier extends Notifier<TaskState> {
     }
   }
 
+  /// ==========================================
+  /// FETCH MY TASKS - Load Tasks Assigned to Current User
+  /// ==========================================
+  /// Retrieves tasks specifically assigned to the logged-in staff member.
+  /// Used on the mobile app's task list screen.
+  /// ==========================================
   Future<void> fetchMyTasks({String? status}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -154,10 +201,22 @@ class TaskNotifier extends Notifier<TaskState> {
     }
   }
 
+  /// ==========================================
+  /// CLEAR TASKS - Reset Task State
+  /// ==========================================
+  /// Clears all task data from memory. Called during logout to prevent
+  /// stale data from appearing for the next user.
+  /// ==========================================
   void clearTasks() {
     state = TaskState();
   }
 
+  /// ==========================================
+  /// CREATE TASK - Add New Task
+  /// ==========================================
+  /// Creates a new task and prepends it to the task list.
+  /// Returns true on success, false on failure.
+  /// ==========================================
   Future<bool> createTask(Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -171,6 +230,12 @@ class TaskNotifier extends Notifier<TaskState> {
     }
   }
 
+  /// ==========================================
+  /// UPDATE TASK - Modify Task Details
+  /// ==========================================
+  /// Updates a task's information (title, status, priority, etc.).
+  /// On success, replaces the old task with the updated version.
+  /// ==========================================
   Future<bool> updateTask(String id, Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -187,6 +252,12 @@ class TaskNotifier extends Notifier<TaskState> {
     }
   }
 
+  /// ==========================================
+  /// COMPLETE TASK - Mark Task as Done
+  /// ==========================================
+  /// Marks a task as completed with optional photo proof.
+  /// Staff can upload images showing the work was done.
+  /// ==========================================
   Future<bool> completeTask(String id, {List<String> completedImages = const []}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -205,6 +276,11 @@ class TaskNotifier extends Notifier<TaskState> {
     }
   }
 
+  /// ==========================================
+  /// DELETE TASK - Remove Task
+  /// ==========================================
+  /// Deletes a task from the backend and removes it from the local list.
+  /// ==========================================
   Future<bool> deleteTask(String id) async {
     state = state.copyWith(isLoading: true, error: null);
     try {

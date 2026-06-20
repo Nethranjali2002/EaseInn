@@ -1,3 +1,22 @@
+/// Property Management Screen — CRUD, search, filters, bulk room creation, image upload.
+///
+/// This is the central hub for managing hotel/resort properties in the EaseInn PMS.
+/// Admins and managers can view all properties in a table, apply multi-criteria
+/// filters (search, status, district, province), and perform full CRUD operations.
+///
+/// Key features:
+/// - Summary dashboard cards showing total properties, active count, total rooms,
+///   and average occupancy rate
+/// - Responsive filter bar that adapts layout for desktop vs tablet
+/// - Property detail dialog with sections for basic info, location, contact,
+///   operations, statistics, room types, gallery, and recent bookings
+/// - Property create/edit form with image upload for logo, cover, and gallery
+///   (uses dart:html FileUploadInputElement for web-only file picking)
+/// - Two-step delete confirmation dialog to prevent accidental deletions
+///
+/// State management uses Riverpod (propertyProvider) to handle async data fetching,
+/// caching, and mutations. Local filtering is applied client-side for instant
+/// feedback without re-fetching from the API.
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -8,6 +27,7 @@ import 'package:shared/shared.dart';
 import '../widgets/web_form_dialog.dart';
 import '../widgets/web_data_table.dart';
 
+/// Main property management screen, accessible to admin and manager roles.
 class WebPropertiesScreen extends ConsumerStatefulWidget {
   const WebPropertiesScreen({super.key});
 
@@ -21,6 +41,7 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
   final TextEditingController _districtController = TextEditingController();
   final TextEditingController _provinceController = TextEditingController();
 
+  // Filter state — search queries and dropdown selections
   String _searchQuery = '';
   String _selectedStatus = 'All';
   String _selectedDistrict = '';
@@ -29,6 +50,7 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
   @override
   void initState() {
     super.initState();
+    // Live search: update filter state on every keystroke
     _searchController.addListener(() {
       setState(() => _searchQuery = _searchController.text);
     });
@@ -38,6 +60,7 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
     _provinceController.addListener(() {
       setState(() => _selectedProvince = _provinceController.text);
     });
+    // Fetch properties after first frame to ensure providers are mounted
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(propertyProvider.notifier).fetchProperties();
     });
