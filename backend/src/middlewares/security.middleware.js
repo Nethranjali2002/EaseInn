@@ -20,14 +20,20 @@ export const helmetMiddleware = helmet({
 // Cross-Origin Resource Sharing rules. Prevents random websites
 // from making API requests to this backend unless allowed in env.
 // ==========================================
+const allowedOrigins = env.cors.origin
+  ? env.cors.origin.split(',').map((o) => o.trim())
+  : [];
+
 export const corsMiddleware = cors({
-  // Only allows requests coming from the exact URL specified in our .env file (e.g., http://localhost:5000)
-  origin: env.cors.origin,
-  // Allows the API to accept cookies and authorization headers from the frontend
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-  // Specifically lists which HTTP methods the frontend is allowed to use
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  // Specifies which HTTP headers the frontend is allowed to send to us
   allowedHeaders: ['Content-Type', 'Authorization'],
 });
 
