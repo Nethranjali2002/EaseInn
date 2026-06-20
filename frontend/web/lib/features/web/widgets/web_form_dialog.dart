@@ -1,10 +1,37 @@
 import 'package:flutter/material.dart';
 
+/// ==========================================
+/// WEB FORM DIALOG - Reusable Modal Form Container
+/// ==========================================
+/// A standardized modal dialog for forms throughout the web admin portal.
+/// Provides a consistent layout with:
+/// - Title bar with close button
+/// - Scrollable content area (for long forms)
+/// - Cancel/Save buttons at the bottom
+/// - Loading state support (disables buttons during API calls)
+///
+/// Usage:
+///   await WebFormDialog.show(
+///     context: context,
+///     title: 'Create Property',
+///     onSubmit: () => _saveProperty(),
+///     child: MyPropertyForm(),
+///   );
+/// ==========================================
 class WebFormDialog extends StatelessWidget {
+  /// The title displayed at the top of the dialog
   final String title;
+
+  /// The form content widget (usually a Column of TextFormFields)
   final Widget child;
+
+  /// Callback when the Save button is tapped
   final VoidCallback? onSubmit;
+
+  /// When true, shows a loading spinner on the Save button and disables it
   final bool isLoading;
+
+  /// Maximum width of the dialog (default 520px)
   final double width;
 
   const WebFormDialog({
@@ -16,6 +43,21 @@ class WebFormDialog extends StatelessWidget {
     this.width = 520,
   });
 
+  /// ==========================================
+  /// show() - Static Helper to Display the Dialog
+  /// ==========================================
+  /// Convenience method to show the dialog without creating the widget manually.
+  /// Returns true if Save was tapped, false if Cancel was tapped.
+  ///
+  /// Example:
+  ///   final saved = await WebFormDialog.show(
+  ///     context: context,
+  ///     title: 'Edit Room',
+  ///     onSubmit: () => saveRoom(),
+  ///     child: RoomForm(),
+  ///   );
+  ///   if (saved) Navigator.pop(context);
+  /// ==========================================
   static Future<bool?> show({
     required BuildContext context,
     required String title,
@@ -48,6 +90,9 @@ class WebFormDialog extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ==========================================
+              // TITLE BAR - Title + Close Button
+              // ==========================================
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -64,8 +109,18 @@ class WebFormDialog extends StatelessWidget {
                 ],
               ),
               const Divider(),
+
+              // ==========================================
+              // SCROLLABLE CONTENT AREA
+              // ==========================================
+              // Flexible + SingleChildScrollView allows the form to scroll
+              // when it's taller than the available dialog space.
               Flexible(child: SingleChildScrollView(child: child)),
               const SizedBox(height: 24),
+
+              // ==========================================
+              // ACTION BUTTONS - Cancel + Save
+              // ==========================================
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -79,7 +134,8 @@ class WebFormDialog extends StatelessWidget {
                   ElevatedButton(
                     onPressed: isLoading ? null : onSubmit,
                     child: isLoading
-                        ? const SizedBox(
+                        ? // Show spinner while API call is in progress
+                        const SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
@@ -92,97 +148,6 @@ class WebFormDialog extends StatelessWidget {
                 ],
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class WebFormField extends StatelessWidget {
-  final String label;
-  final TextEditingController? controller;
-  final String? Function(String?)? validator;
-  final TextInputType keyboardType;
-  final int maxLines;
-  final Widget? suffixIcon;
-  final Widget? prefix;
-  final bool enabled;
-  final String? initialValue;
-  final AutovalidateMode autovalidateMode;
-
-  const WebFormField({
-    super.key,
-    required this.label,
-    this.controller,
-    this.validator,
-    this.keyboardType = TextInputType.text,
-    this.maxLines = 1,
-    this.suffixIcon,
-    this.prefix,
-    this.enabled = true,
-    this.initialValue,
-    this.autovalidateMode = AutovalidateMode.onUserInteraction,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: TextFormField(
-        controller: controller,
-        validator: validator,
-        keyboardType: keyboardType,
-        maxLines: maxLines,
-        enabled: enabled,
-        initialValue: initialValue,
-        autovalidateMode: autovalidateMode,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
-          ),
-          suffixIcon: suffixIcon,
-          prefix: prefix,
-        ),
-      ),
-    );
-  }
-}
-
-class WebFormDropdown<T> extends StatelessWidget {
-  final String label;
-  final T? value;
-  final List<DropdownMenuItem<T>> items;
-  final void Function(T?) onChanged;
-  final String? Function(T?)? validator;
-
-  const WebFormDropdown({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.items,
-    required this.onChanged,
-    this.validator,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: DropdownButtonFormField<T>(
-        initialValue: value,
-        items: items,
-        onChanged: onChanged,
-        validator: validator,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 12,
           ),
         ),
       ),

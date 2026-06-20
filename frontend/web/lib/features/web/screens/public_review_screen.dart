@@ -2,8 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared/shared.dart';
 
-/// A fully public screen — no authentication required.
-/// Loaded via: /#/web/review?token=<reviewToken>
+/// Public Guest Review Screen — no authentication required.
+///
+/// Allows guests to submit a review for their completed stay using a unique
+/// review token sent via email. The token validates the review link and
+/// associates the review with the correct booking.
+///
+/// Flow:
+/// 1. Guest clicks review link from email → loads this screen with token
+/// 2. Token is validated against /api/reviews/public/validate
+/// 3. Guest sees booking info (property, dates, room) and fills out the form
+/// 4. Form includes: rating (1-5 stars), title, comment, pros, cons, would recommend
+/// 5. On submit, review is posted to /api/reviews/public with the token
+/// 6. Success state shows confirmation with option to submit another review
+///
+/// State management uses local setState — no Riverpod providers needed since
+/// this is a single-purpose public page with no shared state.
 class PublicReviewScreen extends ConsumerStatefulWidget {
   final String token;
   const PublicReviewScreen({super.key, required this.token});
@@ -13,13 +27,13 @@ class PublicReviewScreen extends ConsumerStatefulWidget {
 }
 
 class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
-  // State
-  bool _isValidating = true;
-  bool _isSubmitting = false;
-  bool _isSubmitted = false;
+  // UI state flags
+  bool _isValidating = true; // Token validation in progress
+  bool _isSubmitting = false; // Review submission in progress
+  bool _isSubmitted = false; // Successfully submitted
   String? _errorMessage;
 
-  // Booking info from token validation
+  // Booking info populated after token validation
   String _guestName = '';
   String _propertyName = '';
   String _roomNumber = '';
@@ -27,7 +41,7 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
   DateTime? _checkIn;
   DateTime? _checkOut;
 
-  // Form
+  // Review form fields — each rating category is independently scored 1-5
   int _overallRating = 0;
   int _cleanlinessRating = 0;
   int _comfortRating = 0;
@@ -51,6 +65,8 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     super.dispose();
   }
 
+  /// Validates the review token against the API to ensure it's still usable.
+  /// On success, populates booking info. On failure, shows error message.
   Future<void> _validateToken() async {
     try {
       final api = ref.read(apiClientProvider);

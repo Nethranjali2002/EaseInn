@@ -3,26 +3,36 @@ import '../../../core/api/api_client.dart';
 import '../../../core/api/api_exception.dart';
 import '../../auth/data/auth_provider.dart';
 
+/// ==========================================
+/// PROPERTY - Hotel/Resort Data Model
+/// ==========================================
+/// Represents a single property (hotel, resort, or apartment complex)
+/// managed by EaseInn. Each property has its own rooms, bookings, tasks,
+/// and financial data.
+///
+/// The [fromJson] factory handles the complex nested JSON structure
+/// from the backend, including embedded address and contact objects.
+/// ==========================================
 class Property {
   final String id;
-  final String code;
+  final String code; // Human-readable code like "PRP-0001"
   final String name;
   final String description;
-  final Map<String, dynamic> address;
-  final Map<String, dynamic> contact;
-  final List<String> amenities;
-  final List<String> images;
-  final bool isActive;
+  final Map<String, dynamic> address; // Nested: {street, city, state, country}
+  final Map<String, dynamic> contact; // Nested: {phone, email, website}
+  final List<String> amenities; // e.g., ["WiFi", "Pool", "Spa"]
+  final List<String> images; // URLs to property photos
+  final bool isActive; // Soft delete flag - false means archived
   final int totalRooms;
   final int availableRooms;
   final double occupancyRate;
   final int activeBookings;
   final double revenueThisMonth;
   final String createdAt;
-  final String propertyType;
+  final String propertyType; // e.g., "Resort", "Hotel", "Apartment"
   final String website;
-  final String checkInTime;
-  final String checkOutTime;
+  final String checkInTime; // e.g., "14:00"
+  final String checkOutTime; // e.g., "11:00"
   final String logo;
   final String coverImage;
 
@@ -50,6 +60,13 @@ class Property {
     this.coverImage = '',
   });
 
+  /// ==========================================
+  /// JSON PARSER - Handle Nested Backend Response
+  /// ==========================================
+  /// The backend returns property data with nested objects for address and contact.
+  /// This parser safely extracts values from both nested and flat formats,
+  /// with sensible defaults for missing fields.
+  /// ==========================================
   factory Property.fromJson(Map<String, dynamic> json) {
     final contactMap = json['contact'] ?? {};
     return Property(
@@ -78,6 +95,12 @@ class Property {
   }
 }
 
+/// ==========================================
+/// PROPERTY STATE - State Container
+/// ==========================================
+/// Holds the list of properties, the currently selected property,
+/// and loading/error states for the UI.
+/// ==========================================
 class PropertyState {
   final List<Property> properties;
   final Property? selectedProperty;
@@ -113,6 +136,16 @@ class PropertyState {
   }
 }
 
+/// ==========================================
+/// PROPERTY PROVIDER - Property State Manager
+/// ==========================================
+/// Manages all property-related operations:
+/// - Fetching the list of properties
+/// - Fetching a single property by ID
+/// - Creating, updating, and deleting properties
+///
+/// All operations communicate with the backend's /properties endpoints.
+/// ==========================================
 final propertyProvider = NotifierProvider<PropertyNotifier, PropertyState>(
   PropertyNotifier.new,
 );
@@ -123,6 +156,12 @@ class PropertyNotifier extends Notifier<PropertyState> {
 
   ApiClient get _api => ref.read(apiClientProvider);
 
+  /// ==========================================
+  /// FETCH PROPERTIES - Load All Properties
+  /// ==========================================
+  /// Retrieves the list of properties from the backend.
+  /// Supports optional search filtering.
+  /// ==========================================
   Future<void> fetchProperties({String? search}) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -144,6 +183,12 @@ class PropertyNotifier extends Notifier<PropertyState> {
     }
   }
 
+  /// ==========================================
+  /// FETCH PROPERTY BY ID - Load Single Property Details
+  /// ==========================================
+  /// Retrieves detailed information for a specific property.
+  /// Sets the selectedProperty in state for detail screens.
+  /// ==========================================
   Future<void> fetchPropertyById(String id) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -155,6 +200,13 @@ class PropertyNotifier extends Notifier<PropertyState> {
     }
   }
 
+  /// ==========================================
+  /// CREATE PROPERTY - Add New Property
+  /// ==========================================
+  /// Sends property data to the backend to create a new property.
+  /// On success, prepends the new property to the list.
+  /// Returns true on success, false on failure.
+  /// ==========================================
   Future<bool> createProperty(Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -171,6 +223,12 @@ class PropertyNotifier extends Notifier<PropertyState> {
     }
   }
 
+  /// ==========================================
+  /// UPDATE PROPERTY - Modify Existing Property
+  /// ==========================================
+  /// Sends partial updates to the backend for a specific property.
+  /// On success, replaces the old property with the updated version in the list.
+  /// ==========================================
   Future<bool> updateProperty(String id, Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -190,6 +248,12 @@ class PropertyNotifier extends Notifier<PropertyState> {
     }
   }
 
+  /// ==========================================
+  /// DELETE PROPERTY - Remove Property
+  /// ==========================================
+  /// Deletes a property from the backend and removes it from the local list.
+  /// Uses soft delete on the backend (sets isActive to false).
+  /// ==========================================
   Future<bool> deleteProperty(String id) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
