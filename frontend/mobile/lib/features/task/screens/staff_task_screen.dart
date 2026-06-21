@@ -3,19 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart';
 
-/// ==========================================
-/// STAFF TASK SCREEN - Main Task Management View
-/// ==========================================
-/// The primary screen for staff members. Displays all tasks assigned
-/// to the current user with filtering and status management.
-///
-/// Features:
-/// - Segmented button filter (All / Open / In Progress / Completed)
-/// - Pull-to-refresh support
-/// - Expandable task cards with subtasks and checklists
-/// - Status transition buttons (Start / Complete / Block)
-/// - Evidence photo upload for completed tasks
-/// ==========================================
 class StaffTaskScreen extends ConsumerStatefulWidget {
   const StaffTaskScreen({super.key});
 
@@ -24,7 +11,6 @@ class StaffTaskScreen extends ConsumerStatefulWidget {
 }
 
 class _StaffTaskScreenState extends ConsumerState<StaffTaskScreen> {
-  /// Current status filter - empty string means "show all"
   String _selectedFilter = '';
 
   @override
@@ -96,27 +82,10 @@ class _StaffTaskScreenState extends ConsumerState<StaffTaskScreen> {
   }
 }
 
-/// ==========================================
-/// TASK CARD - Individual Task Display Widget
-/// ==========================================
-/// Displays a single task as an expandable card. When collapsed, shows
-/// the task title, type, room number, and status badge. When expanded,
-/// reveals:
-/// - Task description
-/// - Due date
-/// - Subtasks with toggle checkboxes
-/// - Checklist items with toggle checkboxes
-/// - Action buttons (Start / Complete / Block)
-/// - Evidence photo upload button (for completed tasks)
-///
-/// The card color-codes by priority (urgent=red, high=orange, etc.)
-/// and status (open=orange, in-progress=blue, completed=green).
-/// ==========================================
 class _TaskCard extends ConsumerWidget {
   final TaskItem task;
   const _TaskCard({required this.task});
 
-  /// Status color mapping for visual identification
   Color get _statusColor {
     switch (task.status) {
       case 'completed': return Colors.green;
@@ -126,7 +95,6 @@ class _TaskCard extends ConsumerWidget {
     }
   }
 
-  /// Priority color mapping for urgency indication
   Color get _priorityColor {
     switch (task.priority) {
       case 'urgent': return Colors.red;

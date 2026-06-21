@@ -1,27 +1,9 @@
-/// Calendar Screen — bookings, tasks, maintenance, cleaning, occupancy views.
-///
-/// Provides a visual calendar interface for viewing hotel operations across time.
-/// Supports multiple view modes (Month, Week, Day, List, Occupancy) with event
-/// type filtering and property selection.
-///
-/// Key features:
-/// - Month/Week/Day calendar views using CalendarController from shared package
-/// - List view for flat chronological display of all events
-/// - Occupancy view showing room availability as a grid (rooms x dates)
-/// - Event type filters: bookings, tasks, maintenance, cleaning
-/// - Color-coded events: booking=blue, task=orange, maintenance=red, cleaning=green
-/// - Event detail dialog with action buttons (view booking, view task, etc.)
-/// - Property filter to focus on a single property or view all
-///
-/// Data sources: bookingProvider, taskProvider, roomProvider from shared package.
-/// Uses CalendarController for date navigation and event positioning.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 
-/// Main calendar screen showing hotel operations across different time views.
 class WebCalendarScreen extends ConsumerStatefulWidget {
   const WebCalendarScreen({super.key});
 
@@ -36,9 +18,8 @@ class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
   String _selectedEventType =
       'All'; // All, Bookings, Tasks, Maintenance, Cleaning
   String _selectedStatus = 'All';
-  bool _isStaff = false; // Staff see only their tasks; admins/managers see all
+  bool _isStaff = false;
 
-  // Raw event data fetched from APIs (bookings, tasks, rooms)
   List<Map<String, dynamic>> _rawBookings = [];
   List<Map<String, dynamic>> _rawTasks = [];
   List<Map<String, dynamic>> _rawRooms = [];
@@ -54,9 +35,6 @@ class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
     });
   }
 
-  /// Loads calendar data based on user role.
-  /// Staff: only their assigned tasks via /tasks/my
-  /// Admin/Manager: all bookings, tasks, and rooms across selected properties
   Future<void> _loadCalendarData() async {
     setState(() => _isLoading = true);
     try {

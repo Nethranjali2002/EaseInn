@@ -1,25 +1,8 @@
-/// Audit Log Screen — system activity log viewer, admin only.
-///
-/// Displays a chronological log of all system actions for compliance and
-/// debugging purposes. Shows who did what, when, and on which entity.
-///
-/// Key features:
-/// - Summary cards: total actions, users active, today's actions
-/// - Multi-criteria filters: search, module (users/properties/rooms/bookings/payments/tasks/feedback),
-///   action type, user, date range
-/// - Timeline view with action icons, user avatars, and relative timestamps
-/// - Entity linking: click to navigate to the affected entity (booking, user, room, etc.)
-/// - CSV export of filtered audit logs for compliance reporting
-/// - Auto-refresh toggle for real-time monitoring
-///
-/// Data fetched from /api/audit-log with query parameters for filtering.
-/// Admin-only access enforced at the UI level.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 
-/// Audit log screen showing system activity timeline for admin users.
 class WebAuditLogScreen extends ConsumerStatefulWidget {
   const WebAuditLogScreen({super.key});
 
@@ -28,7 +11,7 @@ class WebAuditLogScreen extends ConsumerStatefulWidget {
 }
 
 class _WebAuditLogScreenState extends ConsumerState<WebAuditLogScreen> {
-  List<Map<String, dynamic>> _logs = []; // Raw audit log entries from API
+  List<Map<String, dynamic>> _logs = [];
   bool _isLoading = false;
 
   // Search & Filters
@@ -52,7 +35,6 @@ class _WebAuditLogScreenState extends ConsumerState<WebAuditLogScreen> {
     super.dispose();
   }
 
-  /// Fetches all audit logs from the admin API endpoint.
   Future<void> _loadLogs() async {
     setState(() => _isLoading = true);
     try {

@@ -3,20 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart';
 
-/// ==========================================
-/// LOGIN SCREEN - Staff Authentication
-/// ==========================================
-/// The login screen for the mobile staff app.
-/// Handles email/password authentication with:
-/// - Form validation (email format, password length)
-/// - Loading state during API calls
-/// - Error display via SnackBar
-/// - Role enforcement (staff only)
-///
-/// After successful login:
-/// - Staff users -> redirected to /tasks
-/// - Non-staff users -> logged out with error message
-/// ==========================================
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -25,10 +11,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 }
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
-  /// Form key for validating input fields
   final _formKey = GlobalKey<FormState>();
-
-  /// Controllers for the text input fields
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -39,12 +22,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  /// ==========================================
-  /// VALIDATORS - Input Validation Rules
-  /// ==========================================
-  /// Email must be in valid format (name@domain.com).
-  /// Password must be at least 6 characters.
-  /// ==========================================
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) return 'Email is required';
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
@@ -59,12 +36,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return null;
   }
 
-  /// ==========================================
-  /// LOGIN - Submit Credentials
-  /// ==========================================
-  /// Validates the form, then calls the auth provider's login method.
-  /// The listener on authProvider handles navigation and error display.
-  /// ==========================================
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).login(
@@ -77,17 +48,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
 
-    // ==========================================
-    // AUTH STATE LISTENER - Handle Login Results
-    // ==========================================
-    // Listens for auth state changes and reacts accordingly:
-    // - Successful login: navigate to tasks or show role error
-    // - Error: display error message in SnackBar
     ref.listen<AuthState>(authProvider, (prev, next) {
       if (next.isAuthenticated) {
-        // ==========================================
-        // ROLE ENFORCEMENT - Staff Only
-        // ==========================================
         if (next.user?.role != 'staff') {
           ref.read(authProvider.notifier).logout();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -116,37 +78,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // ==========================================
-                  // BRANDING - Logo and Title
-                  // ==========================================
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1B5E20).withOpacity(0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.hotel,
-                      size: 48,
-                      color: Color(0xFF1B5E20),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  const Icon(Icons.hotel, size: 64, color: Color(0xFF1B5E20)),
+                  const SizedBox(height: 8),
                   const Text(
-                    'EaseInn Staff',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    'EaseInn',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Staff Portal',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 14, color: Color(0xFF1B5E20), fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Sign in to your account',
-                    style: TextStyle(color: Colors.grey.shade600),
+                    'Staff members only. Admins & Managers use the web portal.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
-                  const SizedBox(height: 32),
-
-                  // ==========================================
-                  // FORM FIELDS - Email and Password
-                  // ==========================================
+                  const SizedBox(height: 40),
                   AppTextField(
                     label: 'Email',
                     controller: _emailController,
@@ -160,14 +113,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _passwordController,
                     validator: _validatePassword,
                     obscureText: true,
-                    prefixIcon: const Icon(Icons.lock_outlined),
+                    prefixIcon: const Icon(Icons.lock_outline),
                     textInputAction: TextInputAction.done,
                   ),
+                  const SizedBox(height: 24),
+                  AppButton(
+                    label: 'Sign In',
+                    onPressed: _login,
+                    isLoading: auth.isLoading,
+                  ),
                   const SizedBox(height: 8),
-
-                  // ==========================================
-                  // FORGOT PASSWORD LINK
-                  // ==========================================
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -175,28 +130,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       child: const Text('Forgot Password?'),
                     ),
                   ),
-                  const SizedBox(height: 16),
-
-                  // ==========================================
-                  // LOGIN BUTTON
-                  // ==========================================
-                  AppButton(
-                    label: 'Sign In',
-                    isLoading: auth.isLoading,
-                    onPressed: _login,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ==========================================
-                  // REGISTER LINK
-                  // ==========================================
+                  const SizedBox(height: 8),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text("Don't have an account? "),
                       TextButton(
                         onPressed: () => context.go('/register'),
-                        child: const Text('Register'),
+                        child: const Text('Sign Up'),
                       ),
                     ],
                   ),

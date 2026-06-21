@@ -1,20 +1,3 @@
-/// Profile Screen - Displays user information and role-based access details.
-///
-/// This screen serves as both a profile viewer and a settings hub:
-/// - Shows user avatar (or initials fallback), name, email, and role badge
-/// - Displays detailed user info (Staff ID, permissions, accessible features)
-/// - Provides navigation to Change Password screen
-/// - Handles logout with proper cleanup and navigation to login
-///
-/// The screen is role-aware: admins see full permission details, managers see
-/// operational access, and staff see limited task-only access. This transparency
-/// helps users understand what they can do within the app.
-///
-/// Architecture notes:
-/// - Uses [ConsumerWidget] (stateless) because the profile is read-only data
-///   from the auth provider. No local state management needed.
-/// - Logout captures the router reference before async gap to avoid context
-///   issues after await (a common Flutter gotcha).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -25,11 +8,9 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch auth provider for current user data - rebuilds if user state changes
     final auth = ref.watch(authProvider);
     final user = auth.user;
 
-    // Guard clause: if somehow accessed without being logged in, show fallback
     if (user == null) return const Scaffold(body: Center(child: Text('Not logged in')));
 
     return Scaffold(
@@ -37,9 +18,6 @@ class ProfileScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            // Avatar with fallback: shows profile image if available,
-            // otherwise displays the user's first initial as a placeholder.
-            // This pattern is common in apps where profile images are optional.
             CircleAvatar(
               radius: 50,
               backgroundColor: const Color(0xFF1B5E20).withValues(alpha: 0.1),
@@ -52,13 +30,10 @@ class ProfileScreen extends ConsumerWidget {
                   : null,
             ),
             const SizedBox(height: 16),
-            // User identity section
             Text(user.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(user.email, style: TextStyle(color: Colors.grey.shade600)),
             const SizedBox(height: 8),
-            // Role badge with color coding: red=admin, blue=manager, green=staff.
-            // Color coding provides instant visual recognition of user level.
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
@@ -75,8 +50,6 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
-            // User details card - shows all account information
-            // SelectableText for Staff ID allows easy copying (useful for support)
             Card(
               child: Column(
                 children: [
@@ -117,9 +90,6 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
-            // Feature access matrix - visual permission overview.
-            // Helps users quickly see what they can and cannot access,
-            // reducing confusion and support tickets about "missing features".
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -141,16 +111,12 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 24),
-            // Action buttons
             AppButton(
               label: 'Change Password',
               isOutlined: true,
               onPressed: () => context.go('/change-password'),
             ),
             const SizedBox(height: 12),
-            // Logout button - captures router reference before async operation.
-            // This is critical: after await, the context may be disposed if the
-            // widget is unmounted, so we save the router reference beforehand.
             AppButton(
               label: 'Sign Out',
               isOutlined: true,
@@ -167,13 +133,6 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-/// Visual permission indicator that shows whether a feature is accessible.
-///
-/// Displays a green checkmark with normal text for allowed features,
-/// and a red cancel icon with strikethrough text for denied features.
-/// This visual pattern (icon + text + strikethrough) is a universally
-/// understood way to convey allowed/denied states without requiring
-/// additional explanation.
 class _PermissionChip extends StatelessWidget {
   final String label;
   final bool allowed;

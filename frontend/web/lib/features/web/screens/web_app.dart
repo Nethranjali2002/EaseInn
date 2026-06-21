@@ -18,41 +18,12 @@ import 'public_review_screen.dart';
 import 'web_feedback.dart';
 import 'web_audit_log.dart';
 
-/// ==========================================
-/// WEB APP - Router & Theme Configuration
-/// ==========================================
-/// This file configures the GoRouter navigation system and the Material theme
-/// for the entire web admin portal. It defines:
-///
-/// 1. All routes (URL paths -> screen widgets)
-/// 2. Authentication redirects (unauthenticated users go to login)
-/// 3. The ShellRoute layout (sidebar + content area)
-/// 4. Role-based route access (admin-only routes)
-/// ==========================================
-
-/// ==========================================
-/// ROUTER PROVIDER - GoRouter Configuration
-/// ==========================================
-/// Defines the complete routing table for the web app.
-///
-/// Route structure:
-/// - /web/login - Public login page
-/// - /web/review - Public review page (no auth required)
-/// - /web/* - Protected routes wrapped in WebShell (sidebar layout)
-///
-/// The redirect function handles:
-/// - Unauthenticated users -> /web/login
-/// - Already authenticated users on login page -> /web/dashboard
-/// ==========================================
 final webRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/web/login',
     routes: [
-      // ==========================================
-      // PUBLIC ROUTES (No authentication required)
-      // ==========================================
       GoRoute(path: '/web/login', builder: (c, s) => const WebLoginScreen()),
-      // Public review page - guests can leave reviews without logging in
+      // Public review route - accessible without authentication
       GoRoute(
         path: '/web/review',
         builder: (c, s) {
@@ -60,12 +31,6 @@ final webRouterProvider = Provider<GoRouter>((ref) {
           return PublicReviewScreen(token: token);
         },
       ),
-
-      // ==========================================
-      // PROTECTED ROUTES (Wrapped in WebShell for sidebar layout)
-      // ==========================================
-      // ShellRoute wraps child routes in WebShell, which provides
-      // the persistent sidebar navigation and top bar.
       ShellRoute(
         builder: (context, state, child) => WebShell(child: child),
         routes: [
@@ -113,6 +78,7 @@ final webRouterProvider = Provider<GoRouter>((ref) {
             path: '/web/calendar',
             builder: (c, s) => const WebCalendarScreen(),
           ),
+
           GoRoute(
             path: '/web/feedback',
             builder: (c, s) => const WebFeedbackScreen(),
@@ -124,56 +90,126 @@ final webRouterProvider = Provider<GoRouter>((ref) {
         ],
       ),
     ],
-
-    // ==========================================
-    // REDIRECT LOGIC - Authentication Guards
-    // ==========================================
-    // Runs on every navigation to enforce authentication rules.
     redirect: (context, state) {
       final auth = ref.read(authProvider);
       final isAuth = auth.isAuthenticated;
       final isLogin = state.matchedLocation == '/web/login';
       final isPublicReview = state.matchedLocation == '/web/review';
 
-      // Always allow the public review page
+      // Allow public review page without auth
       if (isPublicReview) return null;
+
+      if (!isAuth && !isLogin) return '/web/login';
+      if (isAuth && isLogin) return '/web/dashboard';
+      return null;
     },
   );
+
+  ref.listen<AuthState>(authProvider, (_, _) {
+    router.refresh();
+  });
+
   return router;
 });
 
-/// ==========================================
-/// WebApp - MaterialApp Root Widget
-/// ==========================================
-/// The root MaterialApp for the web admin portal.
-/// Configures the theme, router, and global behavior.
-/// ==========================================
-class WebApp extends ConsumerWidget {
+class WebApp extends ConsumerStatefulWidget {
   const WebApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WebApp> createState() => _WebAppState();
+}
+
+class _WebAppState extends ConsumerState<WebApp> {
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ref
+        .read(authProvider.notifier)
+        .tryAutoLogin()
+        .timeout(const Duration(seconds: 3))
+        .then((_) {
+          if (mounted) setState(() => _initialized = true);
+        })
+        .catchError((_) {
+          if (mounted) setState(() => _initialized = true);
+        });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final router = ref.watch(webRouterProvider);
 
     return MaterialApp.router(
-      title: 'EaseInn Admin',
+      title: 'EaseInn Admin Portal',
       debugShowCheckedModeBanner: false,
-
-      // ==========================================
-      // THEME CONFIGURATION
-      // ==========================================
-      // Green color scheme matching the hospitality brand
       theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF1B5E20),
         useMaterial3: true,
+        colorSchemeSeed: const Color(0xFF1B5E20),
         brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+        appBarTheme: const AppBarTheme(
+          centerTitle: false,
+          elevation: 0,
+          scrolledUnderElevation: 1,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 1,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: const OutlineInputBorder(
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+            borderSide: BorderSide(color: Color(0xFF1B5E20), width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1B5E20),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+          ),
+        ),
       ),
-
-      // ==========================================
-      // ROUTER CONFIGURATION
-      // ==========================================
-      // GoRouter handles URL-based navigation for Flutter Web
       routerConfig: router,
+      builder: (context, child) {
+        if (!_initialized) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: Color(0xFF1B5E20)),
+            ),
+          );
+        }
+        return child ?? const SizedBox.shrink();
+      },
     );
   }
 }

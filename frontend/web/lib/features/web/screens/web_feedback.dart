@@ -1,27 +1,9 @@
-/// Guest Feedback Management Screen — feedback list, stats, CSV export.
-///
-/// Tabbed interface for managing guest feedback and reviews. Two tabs:
-/// "All Feedback" shows individual reviews in a data table, and "Statistics"
-/// displays aggregate analytics with charts.
-///
-/// Key features:
-/// - All Feedback tab: searchable table with rating stars, property filter,
-///   response management (admin can reply to feedback)
-/// - Statistics tab: rating distribution bar chart, average rating, total reviews,
-///   response rate, CSV export of filtered data
-/// - Multi-criteria filters: search, rating, property, date range
-/// - Quick rating badge with color coding (5=green, 4=blue, 3=yellow, 2=orange, 1=red)
-/// - Response dialog for admin to reply to guest feedback
-///
-/// Uses feedbackProvider (Riverpod) for data. Property list fetched separately
-/// for filter dropdowns. Local state tracks filters and tab selection.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 import '../widgets/web_data_table.dart';
 
-/// Guest feedback management screen with list and statistics views.
 class WebFeedbackScreen extends ConsumerStatefulWidget {
   const WebFeedbackScreen({super.key});
 
@@ -31,14 +13,12 @@ class WebFeedbackScreen extends ConsumerStatefulWidget {
 
 class _WebFeedbackScreenState extends ConsumerState<WebFeedbackScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController; // Tabs: "All Feedback" and "Statistics"
+  late TabController _tabController;
   final TextEditingController _searchController = TextEditingController();
 
-  // Raw data fetched from API
   List<Map<String, dynamic>> _feedback = [];
   List<Map<String, dynamic>> _bookings = [];
   List<User> _staffList = [];
-  // Aggregated rating statistics computed client-side from feedback data
   Map<String, dynamic> _aggregatedStats = {
     'total': 0,
     'avg': 0.0,
@@ -53,7 +33,6 @@ class _WebFeedbackScreenState extends ConsumerState<WebFeedbackScreen>
   };
 
   bool _isLoading = false;
-  // Filter state
   String _selectedPropertyId = 'All';
   String _selectedRating = 'All';
   String _selectedStatus = 'All';
@@ -76,8 +55,6 @@ class _WebFeedbackScreenState extends ConsumerState<WebFeedbackScreen>
     super.dispose();
   }
 
-  /// Loads all feedback data, bookings, and staff list across all properties.
-  /// Computes aggregated statistics (average rating, distribution, response rate).
   Future<void> _loadAllData() async {
     setState(() => _isLoading = true);
     try {

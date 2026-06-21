@@ -1,24 +1,9 @@
-/// Notification Screen — list, mark read, type icons.
-///
-/// Displays all notifications for the current user in a scrollable list with
-/// type-based filtering and mark-as-read functionality.
-///
-/// Key features:
-/// - Filter by notification type: all, bookings, tasks, payments, system
-/// - Type-specific icons with color coding (booking=blue, task=orange, payment=green, system=gray)
-/// - Tap to mark as read and navigate to related entity (booking, task, profile)
-/// - Relative time display (e.g., "2 hours ago", "yesterday")
-/// - Empty state with illustration when no notifications match the filter
-///
-/// Uses notificationProvider from shared package for data and mutations.
-/// Navigation uses go_router to deep-link to related screens.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 
-/// Notifications screen showing all user notifications with filtering.
 class WebNotificationsScreen extends ConsumerStatefulWidget {
   const WebNotificationsScreen({super.key});
 
@@ -29,7 +14,6 @@ class WebNotificationsScreen extends ConsumerStatefulWidget {
 
 class _WebNotificationsScreenState
     extends ConsumerState<WebNotificationsScreen> {
-  /// Current notification type filter (All, Bookings, Rooms, Tasks, Users, Feedback)
   String _selectedFilter = 'All';
 
   @override

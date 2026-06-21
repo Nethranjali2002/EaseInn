@@ -1,18 +1,3 @@
-/// User Profile Screen — view/edit profile, change password, activity log.
-///
-/// Displays the current user's profile information in a tabbed layout with
-/// three tabs: Profile (view/edit), Change Password, and Activity Log.
-///
-/// Key features:
-/// - Profile tab: view and edit personal info (name, email, phone, address),
-///   profile image upload, role display, online status indicator
-/// - Change Password tab: current/new/confirm password form with strength indicator
-/// - Activity Log tab: scrollable list of user's recent actions fetched from API
-/// - Auto-selects tab based on initialTab parameter (e.g., navigated from notification)
-/// - Profile image uploaded via dio multipart to /api/upload/profile
-///
-/// Uses authProvider from shared package for current user data and updateProfile
-/// for saving changes. Activity log fetched from /api/activity-log/me.
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -22,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 
-/// User profile screen with tabbed layout for profile, password, and activity.
 class WebProfileScreen extends ConsumerStatefulWidget {
   final String? initialTab;
   const WebProfileScreen({super.key, this.initialTab});
@@ -33,19 +17,19 @@ class WebProfileScreen extends ConsumerStatefulWidget {
 
 class _WebProfileScreenState extends ConsumerState<WebProfileScreen>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController; // 4 tabs: Profile, Settings, Change Password, Activity
+  late TabController _tabController;
 
-  // Change Password form fields and visibility toggles
+  // Change Password fields
   final _currentPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _passwordFormKey = GlobalKey<FormState>();
   bool _isChangingPassword = false;
-  bool _obscureCurrent = true; // Toggle password visibility
+  bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
 
-  // User preferences (saved locally, not persisted to API yet)
+  // Preferences fields
   String _selectedTheme = 'Light';
   String _selectedLanguage = 'English';
   String _selectedTimezone = 'UTC +05:30 (Colombo)';
@@ -54,14 +38,13 @@ class _WebProfileScreenState extends ConsumerState<WebProfileScreen>
   bool _feedbackAlerts = true;
   bool _emailNotifications = true;
 
-  // Activity log data fetched from /api/activity-log/me
+  // Activity Logs
   List<Map<String, dynamic>> _activities = [];
   bool _loadingActivities = false;
 
   @override
   void initState() {
     super.initState();
-    // Support deep-linking to specific tabs via initialTab parameter
     int initialIdx = 0;
     if (widget.initialTab == 'settings' || widget.initialTab == '1') {
       initialIdx = 1;
@@ -75,7 +58,6 @@ class _WebProfileScreenState extends ConsumerState<WebProfileScreen>
       vsync: this,
       initialIndex: initialIdx,
     );
-    // Load activity logs after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadActivityLogs();
     });
