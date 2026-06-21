@@ -1,19 +1,3 @@
-/// Admin User Management Screen — CRUD, role assignment, status toggle.
-///
-/// Manages all admin and staff users for the PMS. Provides a searchable table
-/// with role-based access control, user creation/editing dialogs, and
-/// quick status toggling for enabling/disabling accounts.
-///
-/// Key features:
-/// - Summary cards: total users, active, inactive, admin count, staff count
-/// - Multi-criteria filters: search, role, status, property assignment
-/// - User creation/editing with role-dependent property assignment
-/// - Profile image upload for user avatars
-/// - Quick status toggle (active/inactive) without opening edit dialog
-/// - Role badges with color coding (admin=red, manager=blue, staff=green, etc.)
-///
-/// State management: adminUsersProvider (Riverpod) defined in this file.
-/// Users fetched from /api/admin/users with optional role/status filters.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +5,6 @@ import 'package:shared/shared.dart';
 import '../widgets/web_data_table.dart';
 import '../widgets/web_form_dialog.dart';
 
-/// State class holding user list, loading state, and error for the admin users screen.
 class AdminUsersState {
   final List<User> users;
   final bool isLoading;
@@ -35,14 +18,12 @@ final adminUsersProvider =
       AdminUsersNotifier.new,
     );
 
-/// Notifier managing admin user CRUD operations and state.
 class AdminUsersNotifier extends Notifier<AdminUsersState> {
   @override
   AdminUsersState build() => AdminUsersState();
 
   ApiClient get _api => ref.read(apiClientProvider);
 
-  /// Fetches all users from the admin users API endpoint.
   Future<void> fetchUsers() async {
     state = AdminUsersState(isLoading: true);
     try {
@@ -58,8 +39,6 @@ class AdminUsersNotifier extends Notifier<AdminUsersState> {
     }
   }
 
-  /// Updates a user's role (admin, manager, staff, etc.) via PATCH request.
-  /// Returns true on success, false on error (error stored in state).
   Future<bool> updateUserRole(String userId, String role) async {
     try {
       final response = await _api.patch(
@@ -81,7 +60,6 @@ class AdminUsersNotifier extends Notifier<AdminUsersState> {
     }
   }
 
-  /// Toggles user active/inactive status without deleting the account.
   Future<bool> toggleUserStatus(String userId, bool isActive) async {
     try {
       final response = await _api.patch(
@@ -103,7 +81,6 @@ class AdminUsersNotifier extends Notifier<AdminUsersState> {
     }
   }
 
-  /// Creates a new user with the provided data (name, email, role, properties, etc.).
   Future<bool> createUser(Map<String, dynamic> data) async {
     try {
       final response = await _api.post('/admin/users', data: data);

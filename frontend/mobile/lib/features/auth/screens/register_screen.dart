@@ -3,13 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart';
 
-/// ==========================================
-/// REGISTER SCREEN - New Account Creation
-/// ==========================================
-/// Allows new staff members to create an account.
-/// Validates name, email, password, and confirm password.
-/// On success, automatically logs in the new user.
-/// ==========================================
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -33,9 +26,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     super.dispose();
   }
 
-  /// ==========================================
-  /// VALIDATORS - Input Validation Rules
-  /// ==========================================
   String? _validateName(String? value) {
     if (value == null || value.trim().isEmpty) return 'Name is required';
     if (value.trim().length < 2) return 'Name must be at least 2 characters';
@@ -61,9 +51,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     return null;
   }
 
-  /// ==========================================
-  /// REGISTER - Submit New Account
-  /// ==========================================
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     await ref.read(authProvider.notifier).register(
@@ -77,10 +64,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
 
-    // Listen for auth state changes (success or error)
     ref.listen<AuthState>(authProvider, (prev, next) {
       if (next.isAuthenticated) {
-        context.go('/tasks');
+        if (next.user?.role != 'staff') {
+          ref.read(authProvider.notifier).logout();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Access denied. Only Staff roles are permitted on the mobile application.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        } else {
+          context.go('/dashboard');
+        }
       }
       if (next.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -90,68 +86,86 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Account')),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                // Registration form fields
-                AppTextField(
-                  label: 'Full Name',
-                  controller: _nameController,
-                  validator: _validateName,
-                  prefixIcon: const Icon(Icons.person_outlined),
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Email',
-                  controller: _emailController,
-                  validator: _validateEmail,
-                  keyboardType: TextInputType.emailAddress,
-                  prefixIcon: const Icon(Icons.email_outlined),
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Password',
-                  controller: _passwordController,
-                  validator: _validatePassword,
-                  obscureText: true,
-                  prefixIcon: const Icon(Icons.lock_outlined),
-                ),
-                const SizedBox(height: 16),
-                AppTextField(
-                  label: 'Confirm Password',
-                  controller: _confirmPasswordController,
-                  validator: _validateConfirmPassword,
-                  obscureText: true,
-                  prefixIcon: const Icon(Icons.lock_outlined),
-                  textInputAction: TextInputAction.done,
-                ),
-                const SizedBox(height: 24),
-
-                // Register button
-                AppButton(
-                  label: 'Create Account',
-                  isLoading: auth.isLoading,
-                  onPressed: _register,
-                ),
-                const SizedBox(height: 16),
-
-                // Login link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Already have an account? '),
-                    TextButton(
-                      onPressed: () => context.go('/login'),
-                      child: const Text('Sign In'),
-                    ),
-                  ],
-                ),
-              ],
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/login'),
+        ),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(Icons.person_add_outlined, size: 64, color: Color(0xFF1B5E20)),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Create Account',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Start monitoring your energy usage.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey.shade600),
+                  ),
+                  const SizedBox(height: 40),
+                  AppTextField(
+                    label: 'Full Name',
+                    controller: _nameController,
+                    validator: _validateName,
+                    prefixIcon: const Icon(Icons.person_outline),
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    label: 'Email',
+                    controller: _emailController,
+                    validator: _validateEmail,
+                    keyboardType: TextInputType.emailAddress,
+                    prefixIcon: const Icon(Icons.email_outlined),
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    label: 'Password',
+                    controller: _passwordController,
+                    validator: _validatePassword,
+                    obscureText: true,
+                    prefixIcon: const Icon(Icons.lock_outline),
+                  ),
+                  const SizedBox(height: 16),
+                  AppTextField(
+                    label: 'Confirm Password',
+                    controller: _confirmPasswordController,
+                    validator: _validateConfirmPassword,
+                    obscureText: true,
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    textInputAction: TextInputAction.done,
+                  ),
+                  const SizedBox(height: 24),
+                  AppButton(
+                    label: 'Create Account',
+                    onPressed: _register,
+                    isLoading: auth.isLoading,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('Already have an account? '),
+                      TextButton(
+                        onPressed: () => context.go('/login'),
+                        child: const Text('Sign In'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

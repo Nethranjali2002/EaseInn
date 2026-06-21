@@ -1,18 +1,3 @@
-/// Booking Management Screen — list/calendar views, filters, check-in/out, status, payments.
-///
-/// Provides admins and managers with a comprehensive view of all hotel bookings.
-/// Supports two viewing modes: a data table list view and a calendar view.
-///
-/// Key features:
-/// - Summary cards: total bookings, pending check-ins, active stays, checked-out count
-/// - Multi-criteria filters: search by guest/booking ID, status, property, date range
-/// - Calendar view built on top of CalendarController from shared package
-/// - Check-in/check-out modals with payment summary and room details
-/// - CSV export of filtered bookings (uses dart:html for web file download)
-/// - Responsive layout: calendar view automatically switches to list on narrow screens
-///
-/// Data flows through bookingProvider (Riverpod) with onRefresh pattern.
-/// Selected booking is stored locally in state for detail modal and action operations.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +6,6 @@ import '../widgets/web_data_table.dart';
 import '../widgets/web_form_dialog.dart';
 import 'web_payments.dart';
 
-/// Main booking management screen for admin and manager roles.
 class WebBookingsScreen extends ConsumerStatefulWidget {
   const WebBookingsScreen({super.key});
 
@@ -31,19 +15,17 @@ class WebBookingsScreen extends ConsumerStatefulWidget {
 
 class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  bool _isCalendarView = false; // Toggle between list and calendar views
-  DateTime _calendarMonth = DateTime.now(); // Currently displayed month in calendar
+  bool _isCalendarView = false;
+  DateTime _calendarMonth = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    // Live search: update state on every keystroke for instant filtering
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text;
       });
     });
-    // Load data after first frame to ensure providers are mounted
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
@@ -53,7 +35,6 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
     super.dispose();
   }
 
-  /// Loads all required data: properties, bookings, and rooms for the first property.
   Future<void> _loadData() async {
     await ref.read(propertyProvider.notifier).fetchProperties();
     await ref.read(bookingProvider.notifier).fetchAllBookings();
@@ -63,7 +44,6 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
     }
   }
 
-  /// Resets all filter selections to their default "All" values.
   void _clearFilters() {
     setState(() {
       _searchController.clear();

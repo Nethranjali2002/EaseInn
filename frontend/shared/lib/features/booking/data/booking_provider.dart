@@ -3,80 +3,44 @@ import '../../../core/api/api_client.dart';
 import '../../../core/api/api_exception.dart';
 import '../../auth/data/auth_provider.dart';
 
-/// ==========================================
-/// BOOKING - Guest Reservation Data Model
-/// ==========================================
-/// Represents a guest booking/reservation at a property.
-/// This is the most complex model in the app, tying together:
-/// - Guest information (name, email, phone, ID)
-/// - Room details (number, type, price per night)
-/// - Stay dates (check-in, check-out, nights)
-/// - Financial breakdown (room total, meal plan, addons, tax, discount)
-/// - Payment tracking (amount paid, payment status)
-/// - Booking lifecycle (status: pending -> confirmed -> checked-in -> checked-out)
-///
-/// The [fromJson] factory handles deeply nested JSON from the backend,
-/// where room and property data are populated (expanded) objects.
-/// ==========================================
 class Booking {
-  // ==========================================
-  // CORE IDENTIFIERS
-  // ==========================================
   final String id;
-  final String code; // Confirmation code like "BKG-240518-0001"
-  final String propertyId;
-  final String roomId;
-  final String roomNumber;
-  final String roomType;
-
-  // ==========================================
-  // GUEST INFORMATION
-  // ==========================================
+  final String code;
   final String guestName;
   final String guestEmail;
   final String guestPhone;
-  final String guestNIC;
-  final String guestNationality;
-
-  // ==========================================
-  // STAY DETAILS
-  // ==========================================
+  final String roomId;
+  final String roomNumber;
+  final String roomType;
   final DateTime checkIn;
   final DateTime checkOut;
   final int numberOfGuests;
   final int adults;
   final int children;
   final int nights;
-
-  // ==========================================
-  // FINANCIAL BREAKDOWN (10-Section Booking Details)
-  // ==========================================
   final double totalAmount;
   final double amountPaid;
-  final double roomCharge; // basePrice * nights
-  final double roomPricePerNight;
+  final String paymentStatus;
+  final String bookingStatus;
+
+  // Detailed fields for 10 Sections Booking details view
+  final String propertyId;
+  final String createdByName;
+  final String propertyName;
+  final String propertyAddress;
+  final String propertyPhone;
+  final String propertyEmail;
   final int roomCapacity;
+  final double roomPricePerNight;
+  final double roomCharge;
   final String mealPlan;
   final double mealPlanTotal;
   final double discount;
   final double tax;
   final String paymentMethod;
   final String transactionReference;
-
-  // ==========================================
-  // STATUS TRACKING
-  // ==========================================
-  final String paymentStatus; // 'pending', 'partial', 'paid', 'refunded', 'cancelled'
-  final String bookingStatus; // 'pending-payment', 'confirmed', 'checked-in', 'checked-out', 'cancelled'
-
-  // ==========================================
-  // PROPERTY & BOOKING METADATA
-  // ==========================================
-  final String createdByName;
-  final String propertyName;
-  final String propertyAddress;
-  final String propertyPhone;
-  final String propertyEmail;
+  final String guestNIC;
+  final String guestNationality;
   final String specialRequests;
   final String notes;
   final String cancellationReason;
@@ -124,38 +88,17 @@ class Booking {
     required this.bookingDate,
   });
 
-  /// ==========================================
-  /// JSON PARSER - Handle Deeply Nested Backend Response
-  /// ==========================================
-  /// The backend returns booking data with populated room, property, and createdBy
-  /// objects. This parser safely extracts data from all these nested structures,
-  /// handling cases where fields might be missing or in different formats.
-  ///
-  /// Key parsing challenges:
-  /// - 'property' can be a nested object OR a string ID
-  /// - 'room' can be a nested object OR a string ID
-  /// - 'createdBy' is a nested user object
-  /// - 'pricing' is a nested object with financial breakdown
-  /// - Dates need parsing from ISO strings
-  /// ==========================================
   factory Booking.fromJson(Map<String, dynamic> json) {
-    // Parse dates first - needed for nights calculation
     final checkInDate = DateTime.parse(json['checkIn']);
     final checkOutDate = DateTime.parse(json['checkOut']);
     final computedNights = checkOutDate.difference(checkInDate).inDays;
 
-    // ==========================================
-    // PARSE CREATED BY (Staff member who created the booking)
-    // ==========================================
     final createdByJson = json['createdBy'];
     String createdByName = 'Manager';
     if (createdByJson is Map) {
       createdByName = createdByJson['name'] ?? 'Manager';
     }
 
-    // ==========================================
-    // PARSE PROPERTY (Can be populated object or string ID)
-    // ==========================================
     final propertyJson = json['property'];
     String propertyId = '';
     String propertyName = 'Seaside Resort & Spa';
@@ -165,14 +108,12 @@ class Booking {
     if (propertyJson is Map) {
       propertyId = propertyJson['_id'] ?? propertyJson['id'] ?? '';
       propertyName = propertyJson['name'] ?? 'Seaside Resort & Spa';
-      // Address can be a nested object or a plain string
       final addr = propertyJson['address'];
       if (addr is Map) {
         propertyAddress = [addr['street'], addr['city'], addr['state'], addr['country']].where((e) => e != null).join(', ');
       } else {
         propertyAddress = addr ?? 'Matara, Sri Lanka';
       }
-      // Contact can be nested or flat
       final contact = propertyJson['contact'];
       if (contact is Map) {
         propertyPhone = contact['phone'] ?? '0412222222';
@@ -187,12 +128,10 @@ class Booking {
       propertyId = json['propertyId'].toString();
     }
 
-    // ==========================================
-    // PARSE ROOM (Can be populated object or string ID)
-    // ==========================================
     final roomJson = json['room'];
     int roomCapacity = 2;
-    double roomPricePerNight = (json['pricing']?['basePrice'] ?? 15000).toDouble();
+    double roomPricePerNight = (json['pricing']?['basePrice'] ?? 15000)
+        .toDouble();
     String roomNum = '';
     String roomTp = '';
     String roomIdStr = '';
@@ -201,7 +140,8 @@ class Booking {
       roomNum = roomJson['roomNumber'] ?? '';
       roomTp = roomJson['roomType'] ?? json['roomType'] ?? '';
       roomCapacity = roomJson['capacity'] ?? 2;
-      roomPricePerNight = (roomJson['basePrice'] ?? roomPricePerNight).toDouble();
+      roomPricePerNight = (roomJson['basePrice'] ?? roomPricePerNight)
+          .toDouble();
     } else if (roomJson is String) {
       roomIdStr = roomJson;
       roomNum = json['roomNumber'] ?? '';
@@ -211,9 +151,6 @@ class Booking {
       roomTp = json['roomType'] ?? '';
     }
 
-    // ==========================================
-    // PARSE PRICING (Nested financial breakdown)
-    // ==========================================
     final pricingJson = json['pricing'] ?? {};
 
     return Booking(
@@ -230,7 +167,8 @@ class Booking {
       numberOfGuests: json['numberOfGuests'] ?? 1,
       adults: json['adults'] ?? 1,
       children: json['children'] ?? 0,
-      nights: pricingJson['nights'] ?? (computedNights > 0 ? computedNights : 1),
+      nights:
+          pricingJson['nights'] ?? (computedNights > 0 ? computedNights : 1),
       totalAmount: (pricingJson['totalAmount'] ?? 0).toDouble(),
       amountPaid: (json['amountPaid'] ?? 0).toDouble(),
       paymentStatus: json['paymentStatus'] ?? 'pending',
@@ -243,26 +181,29 @@ class Booking {
       propertyEmail: propertyEmail,
       roomCapacity: roomCapacity,
       roomPricePerNight: roomPricePerNight,
-      roomCharge: (pricingJson['roomTotal'] ?? (roomPricePerNight * computedNights)).toDouble(),
+      roomCharge:
+          (pricingJson['roomTotal'] ?? (roomPricePerNight * computedNights))
+              .toDouble(),
       mealPlan: json['mealPlan'] ?? 'none',
       mealPlanTotal: (pricingJson['mealPlanTotal'] ?? 0).toDouble(),
       discount: (pricingJson['discount'] ?? 0).toDouble(),
       tax: (pricingJson['tax'] ?? 0).toDouble(),
       paymentMethod: json['paymentMethod'] ?? 'PayHere',
-      transactionReference: json['transactionReference'] ?? 'PH-${(json['_id'] ?? json['id'] ?? '123456').toString().substring(0, 6)}',
+      transactionReference:
+          json['transactionReference'] ??
+          'PH-${(json['_id'] ?? json['id'] ?? '123456').toString().substring(0, 6)}',
       guestNIC: json['guest']?['idNumber'] ?? '200012345678',
       guestNationality: json['guest']?['nationality'] ?? 'Sri Lankan',
       specialRequests: json['specialRequests'] ?? '',
       notes: json['notes'] ?? '',
       cancellationReason: json['cancellationReason'] ?? '',
-      bookingDate: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      bookingDate: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'])
+          : DateTime.now(),
     );
   }
 }
 
-/// ==========================================
-/// BOOKING STATE - State Container
-/// ==========================================
 class BookingState {
   final List<Booking> bookings;
   final bool isLoading;
@@ -291,16 +232,6 @@ class BookingState {
   }
 }
 
-/// ==========================================
-/// BOOKING PROVIDER - Booking State Manager
-/// ==========================================
-/// Manages all booking operations:
-/// - Fetching bookings (per-property or across all properties)
-/// - Creating, updating, cancelling bookings
-/// - Check-in and check-out operations
-///
-/// Supports both property-scoped and global booking views.
-/// ==========================================
 final bookingProvider = NotifierProvider<BookingNotifier, BookingState>(
   BookingNotifier.new,
 );
@@ -311,12 +242,6 @@ class BookingNotifier extends Notifier<BookingState> {
 
   ApiClient get _api => ref.read(apiClientProvider);
 
-  /// ==========================================
-  /// FETCH BOOKINGS - Load Bookings for a Property
-  /// ==========================================
-  /// Retrieves all bookings belonging to a specific property.
-  /// Supports optional filtering by status and search term.
-  /// ==========================================
   Future<void> fetchBookings(
     String propertyId, {
     String? status,
@@ -347,12 +272,6 @@ class BookingNotifier extends Notifier<BookingState> {
     }
   }
 
-  /// ==========================================
-  /// FETCH ALL BOOKINGS - Load Across All Properties
-  /// ==========================================
-  /// Retrieves bookings from all properties the user has access to.
-  /// Used on the consolidated dashboard view for admins.
-  /// ==========================================
   Future<void> fetchAllBookings({
     String? status,
     String? search,
@@ -384,12 +303,6 @@ class BookingNotifier extends Notifier<BookingState> {
     }
   }
 
-  /// ==========================================
-  /// CREATE BOOKING - Add New Reservation
-  /// ==========================================
-  /// Creates a new booking via the backend API.
-  /// On success, prepends the new booking to the list.
-  /// ==========================================
   Future<bool> createBooking(Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -409,12 +322,6 @@ class BookingNotifier extends Notifier<BookingState> {
     }
   }
 
-  /// ==========================================
-  /// UPDATE BOOKING - Modify Existing Reservation
-  /// ==========================================
-  /// Sends partial updates to the backend (e.g., change dates, special requests).
-  /// On success, replaces the old booking with the updated version.
-  /// ==========================================
   Future<bool> updateBooking(String id, Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -434,12 +341,6 @@ class BookingNotifier extends Notifier<BookingState> {
     }
   }
 
-  /// ==========================================
-  /// CANCEL BOOKING - Cancel a Reservation
-  /// ==========================================
-  /// Cancels a booking with a reason. The backend handles refund logic
-  /// and room status updates.
-  /// ==========================================
   Future<bool> cancelBooking(String id, String reason) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -462,11 +363,6 @@ class BookingNotifier extends Notifier<BookingState> {
     }
   }
 
-  /// ==========================================
-  /// CHECK-IN - Register Guest Arrival
-  /// ==========================================
-  /// Updates the booking status to 'checked-in' and marks the room as occupied.
-  /// ==========================================
   Future<bool> checkIn(String id) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -486,12 +382,6 @@ class BookingNotifier extends Notifier<BookingState> {
     }
   }
 
-  /// ==========================================
-  /// CHECK-OUT - Register Guest Departure
-  /// ==========================================
-  /// Updates the booking status to 'checked-out' and marks the room
-  /// as available for cleaning/maintenance.
-  /// ==========================================
   Future<bool> checkOut(String id) async {
     state = state.copyWith(isLoading: true, error: null);
     try {

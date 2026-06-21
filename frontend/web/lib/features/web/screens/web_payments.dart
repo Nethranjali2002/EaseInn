@@ -1,26 +1,9 @@
-/// Financial Reports & Payments Screen — revenue stats, payment list, charts, CSV/PDF export.
-///
-/// Provides a financial overview dashboard and detailed payment transaction list.
-/// Designed for admin/manager roles to monitor revenue and track payment status.
-///
-/// Key features:
-/// - Summary cards: total revenue, paid amount, pending amount, total transactions
-/// - Date range filtering with quick presets (today, 7 days, 30 days, 90 days)
-/// - Payment list with filters: search, status, payment method, date range
-/// - CSV and PDF export of filtered payment data (uses dart:html for web downloads)
-/// - Revenue breakdown chart using fl_chart (bar chart showing monthly revenue)
-/// - Payment status badges with color coding (completed=green, pending=yellow, failed=red)
-/// - Transaction detail dialog showing full payment info and associated booking
-///
-/// Local models: Payment, PaymentStats, RevenueData defined in this file for
-/// API response mapping and chart data.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 import '../widgets/web_data_table.dart';
 
-/// Local model representing a payment transaction from the API.
 class Payment {
   final String id;
   final String code;
@@ -74,7 +57,6 @@ class Payment {
   }
 }
 
-/// State class holding payment list, loading state, error, and revenue totals.
 class PaymentState {
   final List<Payment> payments;
   final bool isLoading;
@@ -95,14 +77,12 @@ final paymentProvider = NotifierProvider<PaymentNotifier, PaymentState>(
   PaymentNotifier.new,
 );
 
-/// Notifier managing payment data fetching and state for a specific property.
 class PaymentNotifier extends Notifier<PaymentState> {
   @override
   PaymentState build() => PaymentState();
 
   ApiClient get _api => ref.read(apiClientProvider);
 
-  /// Fetches all payments for a property and calculates total revenue and pending amount.
   Future<void> fetchPayments(String propertyId) async {
     state = PaymentState(isLoading: true);
     try {
