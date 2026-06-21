@@ -4,11 +4,38 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart';
 import 'web_notifications.dart';
 
+/// ==========================================
+/// WEB SHELL - Main Layout with Sidebar Navigation
+/// ==========================================
+/// This widget provides the persistent layout for the web admin portal.
+/// It wraps all protected pages with:
+///
+/// 1. LEFT SIDEBAR (260px):
+///    - EaseInn branding/logo
+///    - User profile card with role badge
+///    - Navigation menu items (role-based)
+///    - Logout button
+///
+/// 2. TOP HEADER BAR:
+///    - Current page title (auto-detected from URL)
+///    - Notification bell with unread badge
+///    - User profile dropdown (profile, settings, logout)
+///
+/// 3. CONTENT AREA:
+///    - The child widget (current page) renders here
+///
+/// The sidebar menu items change based on the user's role:
+/// - Admin: All menu items
+/// - Manager: Properties, Bookings, Rooms, Tasks, Payments, Feedback
+/// - Staff: Dashboard, Tasks only
+/// ==========================================
 class WebShell extends ConsumerWidget {
+  /// The child widget to display in the content area (current page)
   final Widget child;
 
   const WebShell({super.key, required this.child});
 
+  /// Width of the left sidebar in pixels
   static const _sidebarWidth = 260.0;
 
   @override
@@ -215,6 +242,14 @@ class WebShell extends ConsumerWidget {
     );
   }
 
+  /// ==========================================
+  /// HEADER BAR - Page Title, Notifications, User Menu
+  /// ==========================================
+  /// The top bar that spans across the content area. Contains:
+  /// - Page title (auto-detected from the current URL path)
+  /// - Notification bell icon with unread count badge
+  /// - User profile dropdown with menu options
+  /// ==========================================
   Widget _buildHeader(
     BuildContext context,
     WidgetRef ref,
@@ -647,6 +682,12 @@ class WebShell extends ConsumerWidget {
     );
   }
 
+  /// ==========================================
+  /// ROLE COLOR - Visual Role Indicator
+  /// ==========================================
+  /// Returns a color associated with each user role.
+  /// Used for the role badge displayed next to the user's name.
+  /// ==========================================
   Color _roleColor(String role) {
     switch (role) {
       case 'admin':
@@ -660,6 +701,29 @@ class WebShell extends ConsumerWidget {
     }
   }
 
+  /// ==========================================
+  /// MENU ITEMS - Role-Based Navigation
+  /// ==========================================
+  /// Builds the sidebar navigation menu based on the user's role.
+  /// Different roles see different menu items:
+  ///
+  /// ALL ROLES:
+  ///   - Dashboard
+  ///   - Tasks
+  ///   - Notifications
+  ///   - Calendar
+  ///
+  /// ADMIN & MANAGER:
+  ///   - Properties
+  ///   - Bookings
+  ///   - Rooms
+  ///   - Financial Reports
+  ///   - Feedback
+  ///
+  /// ADMIN ONLY:
+  ///   - Users
+  ///   - Audit Log
+  /// ==========================================
   List<_MenuItem> _getMenuItems(String role) {
     final items = <_MenuItem>[
       _MenuItem(Icons.dashboard_outlined, 'Dashboard', '/web/dashboard'),
@@ -709,6 +773,11 @@ class WebShell extends ConsumerWidget {
   }
 }
 
+/// ==========================================
+/// MENU ITEM - Sidebar Navigation Item Data
+/// ==========================================
+/// Simple data class holding the icon, label, and route for a sidebar menu item.
+/// ==========================================
 class _MenuItem {
   final IconData icon;
   final String label;

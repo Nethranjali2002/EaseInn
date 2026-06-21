@@ -3,21 +3,30 @@ import '../../../core/api/api_client.dart';
 import '../../../core/api/api_exception.dart';
 import '../../auth/data/auth_provider.dart';
 
+/// ==========================================
+/// ROOM - Individual Room Data Model
+/// ==========================================
+/// Represents a single room within a property. Each room has a type,
+/// capacity, nightly price, and current status (available, occupied, maintenance).
+///
+/// Rooms are always scoped to a property - you fetch rooms via
+/// /properties/:propertyId/rooms.
+/// ==========================================
 class Room {
   final String id;
-  final String code;
-  final String propertyId;
-  final String roomNumber;
-  final String roomType;
-  final String name;
-  final int capacity;
-  final double basePrice;
-  final String status;
-  final int floor;
-  final List<String> amenities;
-  final List<String> images;
-  final String currentBooking;
-  final String? currentBookingId;
+  final String code; // Human-readable code like "RM-0001"
+  final String propertyId; // Which property this room belongs to
+  final String roomNumber; // Physical room number (e.g., "101", "A-205")
+  final String roomType; // Category (e.g., "Deluxe", "Suite", "Standard")
+  final String name; // Display name (e.g., "Deluxe Room 1")
+  final int capacity; // Max guests allowed
+  final double basePrice; // Nightly rate
+  final String status; // 'available', 'occupied', 'booked', 'maintenance'
+  final int floor; // Floor number for organizing rooms
+  final List<String> amenities; // Room-specific amenities
+  final List<String> images; // Room photos
+  final String currentBooking; // Summary of current booking (if occupied)
+  final String? currentBookingId; // ID of the active booking (if any)
 
   Room({
     required this.id,
@@ -36,10 +45,17 @@ class Room {
     this.currentBookingId,
   });
 
+  /// ==========================================
+  /// JSON PARSER - Handle Flexible Property Reference
+  /// ==========================================
+  /// The 'property' field can come as either a populated object or a plain string ID.
+  /// This parser handles both formats gracefully.
+  /// ==========================================
   factory Room.fromJson(Map<String, dynamic> json) {
     return Room(
       id: json['_id'] ?? json['id'] ?? '',
       code: json['code'] ?? '',
+      // Property can be a nested object (populated) or a string ID
       propertyId: json['property'] is Map
           ? (json['property']['_id'] ?? json['property']['id'] ?? '')
           : (json['property'] ?? ''),
@@ -58,6 +74,9 @@ class Room {
   }
 }
 
+/// ==========================================
+/// ROOM STATE - State Container
+/// ==========================================
 class RoomState {
   final List<Room> rooms;
   final bool isLoading;
@@ -86,6 +105,12 @@ class RoomState {
   }
 }
 
+/// ==========================================
+/// ROOM PROVIDER - Room State Manager
+/// ==========================================
+/// Manages room CRUD operations for a specific property.
+/// All operations are scoped to a property via its ID.
+/// ==========================================
 final roomProvider = NotifierProvider<RoomNotifier, RoomState>(
   RoomNotifier.new,
 );
@@ -96,6 +121,12 @@ class RoomNotifier extends Notifier<RoomState> {
 
   ApiClient get _api => ref.read(apiClientProvider);
 
+  /// ==========================================
+  /// FETCH ROOMS - Load Rooms for a Property
+  /// ==========================================
+  /// Retrieves all rooms belonging to a specific property.
+  /// Supports optional filtering by status and room type.
+  /// ==========================================
   Future<void> fetchRooms(
     String propertyId, {
     String? status,
@@ -121,6 +152,12 @@ class RoomNotifier extends Notifier<RoomState> {
     }
   }
 
+  /// ==========================================
+  /// CREATE ROOM - Add New Room to Property
+  /// ==========================================
+  /// Creates a new room under the specified property.
+  /// On success, prepends the new room to the list.
+  /// ==========================================
   Future<bool> createRoom(String propertyId, Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -137,6 +174,12 @@ class RoomNotifier extends Notifier<RoomState> {
     }
   }
 
+  /// ==========================================
+  /// UPDATE ROOM - Modify Room Details
+  /// ==========================================
+  /// Updates a room's information (type, price, status, etc.).
+  /// On success, replaces the old room with the updated version.
+  /// ==========================================
   Future<bool> updateRoom(String roomId, Map<String, dynamic> data) async {
     state = state.copyWith(isLoading: true, error: null);
     try {
@@ -153,6 +196,11 @@ class RoomNotifier extends Notifier<RoomState> {
     }
   }
 
+  /// ==========================================
+  /// DELETE ROOM - Remove Room
+  /// ==========================================
+  /// Deletes a room from the backend and removes it from the local list.
+  /// ==========================================
   Future<bool> deleteRoom(String roomId) async {
     state = state.copyWith(isLoading: true, error: null);
     try {

@@ -1,3 +1,19 @@
+/// Task Management Screen — CRUD, assignment, priority, subtasks, CSV export.
+///
+/// Central task management interface for hotel operations staff. Tasks represent
+/// housekeeping, maintenance, front desk, or any operational work items.
+///
+/// Key features:
+/// - Summary cards: total tasks, pending, in-progress, completed, overdue, priority breakdown
+/// - Multi-criteria filters: search, status, priority, task type, assignee, property, date range
+/// - Task creation/editing with form validation and dynamic staff loading
+/// - Subtask management: inline add/complete/delete within task detail dialog
+/// - Staff assignment with profile pictures and online status indicators
+/// - CSV export of filtered tasks for reporting
+/// - Status workflow: pending -> in-progress -> completed (with overdue detection)
+///
+/// Uses taskProvider (Riverpod) for data management. Staff list fetched from
+/// /api/admin/users with role=staff for assignment dropdowns.
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -10,6 +26,7 @@ import '../widgets/web_data_table.dart';
 import '../widgets/web_form_dialog.dart';
 import 'web_users.dart';
 
+/// Main task management screen for admin, manager, and staff roles.
 class WebTasksScreen extends ConsumerStatefulWidget {
   const WebTasksScreen({super.key});
 
@@ -20,6 +37,7 @@ class WebTasksScreen extends ConsumerStatefulWidget {
 class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
   final TextEditingController _searchController = TextEditingController();
 
+  // Filter state variables
   String _searchQuery = '';
   String _selectedPropertyId = 'All';
   String _selectedTaskType = 'All';
@@ -42,6 +60,8 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
     super.dispose();
   }
 
+  /// Loads properties, staff list, and tasks based on user role.
+  /// Managers/admins see all tasks; staff members see only their assigned tasks.
   Future<void> _loadData() async {
     final auth = ref.read(authProvider);
     final isManager =
@@ -52,13 +72,14 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
 
     final properties = ref.read(propertyProvider).properties;
     if (properties.isNotEmpty) {
-      // Pre-load rooms for first property
+      // Pre-load rooms for first property (used in task creation dialog)
       await ref.read(roomProvider.notifier).fetchRooms(properties.first.id);
     }
 
     if (isManager) {
       await _fetchTasksForProperty(_selectedPropertyId);
     } else {
+      // Staff members only see their own tasks
       await ref.read(taskProvider.notifier).fetchMyTasks();
     }
   }
