@@ -53,7 +53,8 @@ export const createBooking = async (data, userId) => {
   const propertyDoc = await Property.findById(data.property);
   if (!propertyDoc) throw new AppError('Property not found', 404);
 
-  // The Booking Algorithm: Ensure nobody else is sleeping in this room on these exact dates
+  data.roomType = room.roomType;
+
   const overlappingBooking = await Booking.findOne({
     room: data.room,
     bookingStatus: { $in: ['pending-payment', 'confirmed', 'checked-in'] },

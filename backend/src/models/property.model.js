@@ -49,6 +49,19 @@ const propertySchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    propertyType: {
+      type: String,
+      enum: ['Resort', 'Hotel', 'Villa', 'Cabana'],
+      default: 'Hotel',
+    },
+    checkInTime: {
+      type: String,
+      default: '14:00',
+    },
+    checkOutTime: {
+      type: String,
+      default: '11:00',
+    },
     taxRate: {
       type: Number,
       default: 0,

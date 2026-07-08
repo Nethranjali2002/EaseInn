@@ -370,6 +370,10 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                                     child: Text('Double'),
                                   ),
                                   DropdownMenuItem(
+                                    value: 'triple',
+                                    child: Text('Triple'),
+                                  ),
+                                  DropdownMenuItem(
                                     value: 'presidential',
                                     child: Text('Presidential'),
                                   ),
@@ -1135,6 +1139,10 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                             child: Text('Double'),
                           ),
                           DropdownMenuItem(
+                            value: 'triple',
+                            child: Text('Triple'),
+                          ),
+                          DropdownMenuItem(
                             value: 'presidential',
                             child: Text('Presidential'),
                           ),
@@ -1574,6 +1582,7 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                           DropdownMenuItem(value: 'cabana', child: Text('Cabana')),
                           DropdownMenuItem(value: 'single', child: Text('Single')),
                           DropdownMenuItem(value: 'double', child: Text('Double')),
+                          DropdownMenuItem(value: 'triple', child: Text('Triple')),
                           DropdownMenuItem(value: 'presidential', child: Text('Presidential')),
                         ],
                         onChanged: (v) => setDialogState(() => roomType = v ?? 'deluxe'),
