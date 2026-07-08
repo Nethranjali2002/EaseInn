@@ -446,6 +446,10 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
                                     child: Text('Cancelled'),
                                   ),
                                   DropdownMenuItem(
+                                    value: 'Blocked',
+                                    child: Text('Blocked'),
+                                  ),
+                                  DropdownMenuItem(
                                     value: 'Overdue',
                                     child: Text('Overdue'),
                                   ),
@@ -1162,7 +1166,7 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
         statusColor = const Color(0xFF1565C0);
         statusLabel = 'IN PROGRESS';
         break;
-      case 'pending':
+      case 'open':
         statusColor = isOverdue ? Colors.red : const Color(0xFFE65100);
         statusLabel = isOverdue ? 'OVERDUE' : 'PENDING';
         break;
@@ -1717,6 +1721,10 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
                               child: Text('Guest Request'),
                             ),
                             DropdownMenuItem(
+                              value: 'Inspection',
+                              child: Text('Inspection'),
+                            ),
+                            DropdownMenuItem(
                               value: 'Laundry',
                               child: Text('Laundry'),
                             ),
@@ -1944,10 +1952,16 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
       case 'concierge':
         return 'Guest Request';
       case 'inspection':
+        return 'Inspection';
+      case 'laundry':
         return 'Laundry';
+      case 'transport':
+        return 'Transport';
+      case 'inventory':
+        return 'Inventory';
       case 'other':
       default:
-        return 'Transport';
+        return 'Other';
     }
   }
 
@@ -1959,12 +1973,14 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
         return 'maintenance';
       case 'Guest Request':
         return 'guest_service';
-      case 'Laundry':
+      case 'Inspection':
         return 'inspection';
+      case 'Laundry':
+        return 'laundry';
       case 'Transport':
-        return 'other';
+        return 'transport';
       case 'Inventory':
-        return 'other';
+        return 'inventory';
       default:
         return 'other';
     }

@@ -394,6 +394,10 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                                     child: Text('Double'),
                                   ),
                                   DropdownMenuItem(
+                                    value: 'Triple',
+                                    child: Text('Triple'),
+                                  ),
+                                  DropdownMenuItem(
                                     value: 'Deluxe',
                                     child: Text('Deluxe'),
                                   ),
@@ -433,6 +437,10 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                                   DropdownMenuItem(
                                     value: 'All',
                                     child: Text('All Statuses'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'draft',
+                                    child: Text('Draft'),
                                   ),
                                   DropdownMenuItem(
                                     value: 'pending-payment',

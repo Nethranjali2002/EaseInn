@@ -31,7 +31,7 @@ const taskSchema = new mongoose.Schema(
     
     type: {
       type: String,
-      enum: ['housekeeping', 'maintenance', 'guest_service', 'inspection', 'other'],
+      enum: ['housekeeping', 'maintenance', 'guest_service', 'inspection', 'laundry', 'transport', 'inventory', 'other'],
       default: 'housekeeping',
     },
     

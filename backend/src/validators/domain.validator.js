@@ -21,6 +21,9 @@ export const createPropertySchema = Joi.object({
   coverImage: Joi.string().optional().allow(''),
   isActive: Joi.boolean().optional(),
   taxRate: Joi.number().min(0).max(100).optional(), 
+  propertyType: Joi.string().valid('Resort', 'Hotel', 'Villa', 'Cabana').optional(),
+  checkInTime: Joi.string().trim().optional(),
+  checkOutTime: Joi.string().trim().optional(),
 });
 
 export const updatePropertySchema = Joi.object({
@@ -44,13 +47,16 @@ export const updatePropertySchema = Joi.object({
   logo: Joi.string().optional().allow(''),
   coverImage: Joi.string().optional().allow(''),
   taxRate: Joi.number().min(0).max(100).optional(),
+  propertyType: Joi.string().valid('Resort', 'Hotel', 'Villa', 'Cabana').optional(),
+  checkInTime: Joi.string().trim().optional(),
+  checkOutTime: Joi.string().trim().optional(),
 }).min(1);
 
 // ROOMS
 
 export const createRoomSchema = Joi.object({
   roomNumber: Joi.string().trim().required(),
-  roomType: Joi.string().valid('single', 'double', 'triple', 'suite', 'family', 'deluxe', 'presidential').required(),
+  roomType: Joi.string().valid('single', 'double', 'triple', 'suite', 'family', 'deluxe', 'cabana', 'presidential').required(),
   name: Joi.string().trim().max(100).optional(),
   capacity: Joi.number().integer().min(1).max(20).required(), 
   basePrice: Joi.number().min(0).required(), 
@@ -58,6 +64,7 @@ export const createRoomSchema = Joi.object({
   amenities: Joi.array().items(Joi.string().trim()).optional(),
   images: Joi.array().items(Joi.string()).optional(),
   floor: Joi.number().integer().optional(),
+  status: Joi.string().valid('available', 'booked', 'occupied', 'maintenance', 'out-of-service', 'blocked', 'cleaning').optional(),
   seasonalRates: Joi.array().items(Joi.object({
     name: Joi.string().trim().optional(),
     startDate: Joi.date().required(),
@@ -74,7 +81,7 @@ export const createRoomSchema = Joi.object({
 
 export const updateRoomSchema = Joi.object({
   roomNumber: Joi.string().trim().optional(),
-  roomType: Joi.string().valid('single', 'double', 'triple', 'suite', 'family', 'deluxe', 'presidential').optional(),
+  roomType: Joi.string().valid('single', 'double', 'triple', 'suite', 'family', 'deluxe', 'cabana', 'presidential').optional(),
   name: Joi.string().trim().max(100).optional(),
   capacity: Joi.number().integer().min(1).max(20).optional(),
   basePrice: Joi.number().min(0).optional(),
@@ -82,7 +89,7 @@ export const updateRoomSchema = Joi.object({
   amenities: Joi.array().items(Joi.string().trim()).optional(),
   images: Joi.array().items(Joi.string()).optional(),
   floor: Joi.number().integer().optional(),
-  status: Joi.string().valid('available', 'booked', 'occupied', 'maintenance', 'blocked', 'cleaning').optional(),
+  status: Joi.string().valid('available', 'booked', 'occupied', 'maintenance', 'out-of-service', 'blocked', 'cleaning').optional(),
   isActive: Joi.boolean().optional(),
   seasonalRates: Joi.array().items(Joi.object({
     name: Joi.string().trim().optional(),
@@ -165,7 +172,7 @@ export const createTaskSchema = Joi.object({
   property: Joi.string().hex().length(24).required(),
   title: Joi.string().trim().max(200).required(),
   description: Joi.string().trim().max(2000).optional(),
-  type: Joi.string().valid('housekeeping', 'maintenance', 'guest_service', 'inspection', 'other').optional(),
+  type: Joi.string().valid('housekeeping', 'maintenance', 'guest_service', 'inspection', 'laundry', 'transport', 'inventory', 'other').optional(),
   priority: Joi.string().valid('low', 'medium', 'high', 'urgent').optional(),
   assignedTo: Joi.string().hex().length(24).optional(),
   room: Joi.string().hex().length(24).optional(),
@@ -185,7 +192,7 @@ export const createTaskSchema = Joi.object({
 export const updateTaskSchema = Joi.object({
   title: Joi.string().trim().max(200).optional(),
   description: Joi.string().trim().max(2000).optional(),
-  type: Joi.string().valid('housekeeping', 'maintenance', 'guest_service', 'inspection', 'other').optional(),
+  type: Joi.string().valid('housekeeping', 'maintenance', 'guest_service', 'inspection', 'laundry', 'transport', 'inventory', 'other').optional(),
   priority: Joi.string().valid('low', 'medium', 'high', 'urgent').optional(),
   status: Joi.string().valid('open', 'in-progress', 'blocked', 'completed', 'cancelled').optional(),
   assignedTo: Joi.string().hex().length(24).optional(),

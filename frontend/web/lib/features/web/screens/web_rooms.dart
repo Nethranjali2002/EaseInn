@@ -357,28 +357,32 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                                     child: Text('All Room Types'),
                                   ),
                                   DropdownMenuItem(
-                                    value: 'deluxe',
-                                    child: Text('Deluxe'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'family',
-                                    child: Text('Family'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'suite',
-                                    child: Text('Suite'),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 'cabana',
-                                    child: Text('Cabana'),
-                                  ),
-                                  DropdownMenuItem(
                                     value: 'single',
                                     child: Text('Single'),
                                   ),
                                   DropdownMenuItem(
                                     value: 'double',
                                     child: Text('Double'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'triple',
+                                    child: Text('Triple'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'suite',
+                                    child: Text('Suite'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'family',
+                                    child: Text('Family'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'deluxe',
+                                    child: Text('Deluxe'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 'cabana',
+                                    child: Text('Cabana'),
                                   ),
                                   DropdownMenuItem(
                                     value: 'presidential',
@@ -1275,28 +1279,32 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                         initialValue: roomType,
                         items: const [
                           DropdownMenuItem(
-                            value: 'deluxe',
-                            child: Text('Deluxe'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'family',
-                            child: Text('Family'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'suite',
-                            child: Text('Suite'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'cabana',
-                            child: Text('Cabana'),
-                          ),
-                          DropdownMenuItem(
                             value: 'single',
                             child: Text('Single'),
                           ),
                           DropdownMenuItem(
                             value: 'double',
                             child: Text('Double'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'triple',
+                            child: Text('Triple'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'suite',
+                            child: Text('Suite'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'family',
+                            child: Text('Family'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'deluxe',
+                            child: Text('Deluxe'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'cabana',
+                            child: Text('Cabana'),
                           ),
                           DropdownMenuItem(
                             value: 'presidential',
@@ -1763,28 +1771,32 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                         value: roomType,
                         items: const [
                           DropdownMenuItem(
-                            value: 'deluxe',
-                            child: Text('Deluxe'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'family',
-                            child: Text('Family'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'suite',
-                            child: Text('Suite'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'cabana',
-                            child: Text('Cabana'),
-                          ),
-                          DropdownMenuItem(
                             value: 'single',
                             child: Text('Single'),
                           ),
                           DropdownMenuItem(
                             value: 'double',
                             child: Text('Double'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'triple',
+                            child: Text('Triple'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'suite',
+                            child: Text('Suite'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'family',
+                            child: Text('Family'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'deluxe',
+                            child: Text('Deluxe'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'cabana',
+                            child: Text('Cabana'),
                           ),
                           DropdownMenuItem(
                             value: 'presidential',

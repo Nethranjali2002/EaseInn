@@ -37,6 +37,8 @@ export const createBooking = async (data, userId) => {
     throw new AppError('Room does not belong to this property', 400);
   }
 
+  data.roomType = room.roomType;
+
   const propertyDoc = await Property.findById(data.property);
   if (!propertyDoc) throw new AppError('Property not found', 404);
 
