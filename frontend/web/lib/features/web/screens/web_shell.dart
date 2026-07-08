@@ -4,38 +4,11 @@ import 'package:go_router/go_router.dart';
 import 'package:shared/shared.dart';
 import 'web_notifications.dart';
 
-/// ==========================================
-/// WEB SHELL - Main Layout with Sidebar Navigation
-/// ==========================================
-/// This widget provides the persistent layout for the web admin portal.
-/// It wraps all protected pages with:
-///
-/// 1. LEFT SIDEBAR (260px):
-///    - EaseInn branding/logo
-///    - User profile card with role badge
-///    - Navigation menu items (role-based)
-///    - Logout button
-///
-/// 2. TOP HEADER BAR:
-///    - Current page title (auto-detected from URL)
-///    - Notification bell with unread badge
-///    - User profile dropdown (profile, settings, logout)
-///
-/// 3. CONTENT AREA:
-///    - The child widget (current page) renders here
-///
-/// The sidebar menu items change based on the user's role:
-/// - Admin: All menu items
-/// - Manager: Properties, Bookings, Rooms, Tasks, Payments, Feedback
-/// - Staff: Dashboard, Tasks only
-/// ==========================================
 class WebShell extends ConsumerWidget {
-  /// The child widget to display in the content area (current page)
   final Widget child;
 
   const WebShell({super.key, required this.child});
 
-  /// Width of the left sidebar in pixels
   static const _sidebarWidth = 260.0;
 
   @override
@@ -242,14 +215,6 @@ class WebShell extends ConsumerWidget {
     );
   }
 
-  /// ==========================================
-  /// HEADER BAR - Page Title, Notifications, User Menu
-  /// ==========================================
-  /// The top bar that spans across the content area. Contains:
-  /// - Page title (auto-detected from the current URL path)
-  /// - Notification bell icon with unread count badge
-  /// - User profile dropdown with menu options
-  /// ==========================================
   Widget _buildHeader(
     BuildContext context,
     WidgetRef ref,
@@ -407,9 +372,7 @@ class WebShell extends ConsumerWidget {
                                   onTap: () {
                                     if (!n.read) {
                                       ref
-                                          .read(
-                                            notificationProvider.notifier,
-                                          )
+                                          .read(notificationProvider.notifier)
                                           .markAsRead(n.id);
                                     }
                                     Navigator.pop(ctx);
@@ -759,7 +722,13 @@ class WebShell extends ConsumerWidget {
       items.add(_MenuItem(Icons.star_outline, 'Feedback', '/web/feedback'));
     }
 
-    items.add(_MenuItem(Icons.notifications_outlined, 'Notifications', '/web/notifications'));
+    items.add(
+      _MenuItem(
+        Icons.notifications_outlined,
+        'Notifications',
+        '/web/notifications',
+      ),
+    );
 
     items.add(
       _MenuItem(Icons.calendar_month_outlined, 'Calendar', '/web/calendar'),

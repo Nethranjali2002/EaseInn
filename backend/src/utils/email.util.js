@@ -1,35 +1,27 @@
-import nodemailer from 'nodemailer'; // The standard Node.js library for sending emails
-import { env } from '../config/env.config.js'; // Secure environment variables (passwords, URLs)
-import logger from './logger.util.js'; // Server logging tool
+import nodemailer from 'nodemailer'; 
+import { env } from '../config/env.config.js'; 
+import logger from './logger.util.js'; 
 
-// ==========================================
 // 1. TRANSPORTER CONFIGURATION
-// Sets up the "post office" connection (like logging into Gmail behind the scenes)
-// ==========================================
 const transporter = nodemailer.createTransport({
-  host: env.emailHost || 'smtp.gmail.com', // The email provider's server
-  port: parseInt(env.emailPort) || 587, // Port 587 is standard for secure TLS
-  secure: false, // True for 465, false for other ports
+  host: env.emailHost || 'smtp.gmail.com',
+  port: parseInt(env.emailPort) || 587, 
+  secure: false,
   auth: {
-    user: env.emailUser, // The hotel's automated email address
-    pass: env.emailPass, // An "App Password", NOT the actual account password
+    user: env.emailUser, 
+    pass: env.emailPass, 
   },
 });
 
 const from = env.emailFrom || 'EaseInn <noreply@easeinn.com>';
 
-// ==========================================
 // 2. CORE EMAIL SENDER UTILITY
-// A helper function that wraps the nodemailer logic so we don't have to rewrite try/catch blocks every time
-// ==========================================
 export const sendEmail = async ({ to, subject, html }) => {
-  // If the admin hasn't set up the email passwords yet, fail silently instead of crashing the server
   if (!env.emailUser) {
     logger.warn('Email service not configured - skipping email send');
     return;
   }
   try {
-    // Actually dispatch the email across the internet
     await transporter.sendMail({ from, to, subject, html });
     logger.info(`Email sent to ${to}: ${subject}`);
   } catch (error) {
@@ -38,15 +30,11 @@ export const sendEmail = async ({ to, subject, html }) => {
 };
 
 
-// ==========================================
-// 3. BOOKING CONFIRMATION EMAIL
-// Sent to the guest the moment they finish paying on the website
-// ==========================================
+
 export const sendBookingConfirmation = async (guestEmail, guestName, booking) => {
   await sendEmail({
     to: guestEmail,
     subject: `Booking Confirmed - ${booking.property?.name || 'EaseInn'}`,
-    // We use inline CSS because email clients (like Outlook or Gmail) strip out external CSS files
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #1B5E20;">Booking Confirmed!</h2>
@@ -66,10 +54,6 @@ export const sendBookingConfirmation = async (guestEmail, guestName, booking) =>
 };
 
 
-// ==========================================
-// 4. PAYMENT REMINDER EMAIL
-// An automated nudge if they booked but didn't pay the full balance yet
-// ==========================================
 export const sendPaymentReminder = async (guestEmail, guestName, booking, amountDue) => {
   await sendEmail({
     to: guestEmail,
@@ -87,10 +71,6 @@ export const sendPaymentReminder = async (guestEmail, guestName, booking, amount
 };
 
 
-// ==========================================
-// 5. CHECK-IN REMINDER EMAIL
-// A helpful notification fired by the automated scheduler cron job 1 day before arrival
-// ==========================================
 export const sendCheckInReminder = async (guestEmail, guestName, booking) => {
   await sendEmail({
     to: guestEmail,
@@ -108,10 +88,6 @@ export const sendCheckInReminder = async (guestEmail, guestName, booking) => {
 };
 
 
-// ==========================================
-// 6. POST-STAY REVIEW INVITATION EMAIL
-// Automatically dispatched when the front desk clicks "Check Out". Includes a cryptographically secure token so only this specific guest can review.
-// ==========================================
 export const sendReviewInvitation = async (guestEmail, guestName, { propertyName, roomNumber, checkIn, checkOut, reviewLink }) => {
   await sendEmail({
     to: guestEmail,

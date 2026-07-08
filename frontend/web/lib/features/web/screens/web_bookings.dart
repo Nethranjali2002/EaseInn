@@ -1,18 +1,3 @@
-/// Booking Management Screen — list/calendar views, filters, check-in/out, status, payments.
-///
-/// Provides admins and managers with a comprehensive view of all hotel bookings.
-/// Supports two viewing modes: a data table list view and a calendar view.
-///
-/// Key features:
-/// - Summary cards: total bookings, pending check-ins, active stays, checked-out count
-/// - Multi-criteria filters: search by guest/booking ID, status, property, date range
-/// - Calendar view built on top of CalendarController from shared package
-/// - Check-in/check-out modals with payment summary and room details
-/// - CSV export of filtered bookings (uses dart:html for web file download)
-/// - Responsive layout: calendar view automatically switches to list on narrow screens
-///
-/// Data flows through bookingProvider (Riverpod) with onRefresh pattern.
-/// Selected booking is stored locally in state for detail modal and action operations.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -31,19 +16,17 @@ class WebBookingsScreen extends ConsumerStatefulWidget {
 
 class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  bool _isCalendarView = false; // Toggle between list and calendar views
-  DateTime _calendarMonth = DateTime.now(); // Currently displayed month in calendar
+  bool _isCalendarView = false;
+  DateTime _calendarMonth = DateTime.now();
 
   @override
   void initState() {
     super.initState();
-    // Live search: update state on every keystroke for instant filtering
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text;
       });
     });
-    // Load data after first frame to ensure providers are mounted
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
@@ -722,7 +705,9 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
     return [
       DataCell(
         Text(
-          b.code.isNotEmpty ? b.code : '#${b.id.substring(b.id.length > 8 ? b.id.length - 8 : 0)}',
+          b.code.isNotEmpty
+              ? b.code
+              : '#${b.id.substring(b.id.length > 8 ? b.id.length - 8 : 0)}',
           style: const TextStyle(
             fontFamily: 'monospace',
             fontWeight: FontWeight.bold,
@@ -784,7 +769,11 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
         ),
       ),
       DataCell(
-        Text(isAdmin ? 'Rs. ${b.totalAmount.toStringAsFixed(0)}' : 'Rs. ${b.roomCharge.toStringAsFixed(0)}'),
+        Text(
+          isAdmin
+              ? 'Rs. ${b.totalAmount.toStringAsFixed(0)}'
+              : 'Rs. ${b.roomCharge.toStringAsFixed(0)}',
+        ),
       ),
       DataCell(
         ElevatedButton(
@@ -869,29 +858,52 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                   // Status Banner
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
-                      color: _statusColor(currentBooking.bookingStatus).withOpacity(0.08),
+                      color: _statusColor(
+                        currentBooking.bookingStatus,
+                      ).withOpacity(0.08),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: _statusColor(currentBooking.bookingStatus).withOpacity(0.2)),
+                      border: Border.all(
+                        color: _statusColor(
+                          currentBooking.bookingStatus,
+                        ).withOpacity(0.2),
+                      ),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: _statusColor(currentBooking.bookingStatus),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            currentBooking.bookingStatus.replaceAll('-', ' ').toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            currentBooking.bookingStatus
+                                .replaceAll('-', ' ')
+                                .toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          currentBooking.code.isNotEmpty ? currentBooking.code : '',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          currentBooking.code.isNotEmpty
+                              ? currentBooking.code
+                              : '',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -901,47 +913,94 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                         const SizedBox(width: 8),
                         Text(
                           '${currentBooking.guestName}',
-                          style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 13,
+                          ),
                         ),
                         const Spacer(),
                         if (canManage) ...[
-                          _statusActionBtn('Edit', Icons.edit, Colors.indigo, () async {
-                            Navigator.pop(ctx);
-                            if (currentBooking.propertyId.isNotEmpty) {
-                              await ref.read(roomProvider.notifier).fetchRooms(currentBooking.propertyId);
-                            }
-                            final rooms = ref.read(roomProvider).rooms;
-                            await _showBookingDialog(context, rooms, booking: currentBooking);
-                          }),
+                          _statusActionBtn(
+                            'Edit',
+                            Icons.edit,
+                            Colors.indigo,
+                            () async {
+                              Navigator.pop(ctx);
+                              if (currentBooking.propertyId.isNotEmpty) {
+                                await ref
+                                    .read(roomProvider.notifier)
+                                    .fetchRooms(currentBooking.propertyId);
+                              }
+                              final rooms = ref.read(roomProvider).rooms;
+                              await _showBookingDialog(
+                                context,
+                                rooms,
+                                booking: currentBooking,
+                              );
+                            },
+                          ),
                           const SizedBox(width: 6),
                           if (currentBooking.bookingStatus == 'confirmed')
-                            _statusActionBtn('Check In', Icons.login, const Color(0xFF2E7D32), () async {
-                              final success = await ref.read(bookingProvider.notifier).checkIn(currentBooking.id);
-                              if (success) {
-                                try {
-                                  final res = await ref.read(apiClientProvider).get('/bookings/${currentBooking.id}');
-                                  setDetailsState(() { currentBooking = Booking.fromJson(res.data['data']['booking']); });
-                                } catch (_) {}
-                                _loadData();
-                              }
-                            }),
+                            _statusActionBtn(
+                              'Check In',
+                              Icons.login,
+                              const Color(0xFF2E7D32),
+                              () async {
+                                final success = await ref
+                                    .read(bookingProvider.notifier)
+                                    .checkIn(currentBooking.id);
+                                if (success) {
+                                  try {
+                                    final res = await ref
+                                        .read(apiClientProvider)
+                                        .get('/bookings/${currentBooking.id}');
+                                    setDetailsState(() {
+                                      currentBooking = Booking.fromJson(
+                                        res.data['data']['booking'],
+                                      );
+                                    });
+                                  } catch (_) {}
+                                  _loadData();
+                                }
+                              },
+                            ),
                           if (currentBooking.bookingStatus == 'checked-in')
-                            _statusActionBtn('Check Out', Icons.logout, const Color(0xFF1565C0), () async {
-                              final success = await ref.read(bookingProvider.notifier).checkOut(currentBooking.id);
-                              if (success) {
-                                try {
-                                  final res = await ref.read(apiClientProvider).get('/bookings/${currentBooking.id}');
-                                  setDetailsState(() { currentBooking = Booking.fromJson(res.data['data']['booking']); });
-                                } catch (_) {}
-                                _loadData();
-                              }
-                            }),
-                          if (currentBooking.bookingStatus != 'cancelled' && currentBooking.bookingStatus != 'checked-out' && currentBooking.bookingStatus != 'completed') ...[
+                            _statusActionBtn(
+                              'Check Out',
+                              Icons.logout,
+                              const Color(0xFF1565C0),
+                              () async {
+                                final success = await ref
+                                    .read(bookingProvider.notifier)
+                                    .checkOut(currentBooking.id);
+                                if (success) {
+                                  try {
+                                    final res = await ref
+                                        .read(apiClientProvider)
+                                        .get('/bookings/${currentBooking.id}');
+                                    setDetailsState(() {
+                                      currentBooking = Booking.fromJson(
+                                        res.data['data']['booking'],
+                                      );
+                                    });
+                                  } catch (_) {}
+                                  _loadData();
+                                }
+                              },
+                            ),
+                          if (currentBooking.bookingStatus != 'cancelled' &&
+                              currentBooking.bookingStatus != 'checked-out' &&
+                              currentBooking.bookingStatus != 'completed') ...[
                             const SizedBox(width: 6),
-                            _statusActionBtn('Cancel', Icons.cancel, Colors.red, () async {
-                              Navigator.pop(ctx);
-                              await _doCancel(currentBooking);
-                            }),
+                            _statusActionBtn(
+                              'Cancel',
+                              Icons.cancel,
+                              Colors.red,
+                              () async {
+                                Navigator.pop(ctx);
+                                await _doCancel(currentBooking);
+                              },
+                            ),
                           ],
                         ],
                       ],
@@ -954,10 +1013,16 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                     children: [
                       OutlinedButton.icon(
                         icon: const Icon(Icons.payment, size: 14),
-                        label: const Text('Request Payment', style: TextStyle(fontSize: 12)),
+                        label: const Text(
+                          'Request Payment',
+                          style: TextStyle(fontSize: 12),
+                        ),
                         onPressed: () => _generatePaymentLink(currentBooking),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           side: BorderSide(color: Colors.indigo.shade300),
                           foregroundColor: Colors.indigo,
                         ),
@@ -965,10 +1030,16 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                       const SizedBox(width: 8),
                       OutlinedButton.icon(
                         icon: const Icon(Icons.print, size: 14),
-                        label: const Text('Generate Invoice', style: TextStyle(fontSize: 12)),
+                        label: const Text(
+                          'Generate Invoice',
+                          style: TextStyle(fontSize: 12),
+                        ),
                         onPressed: () => _printInvoice(currentBooking),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           side: BorderSide(color: Colors.blue.shade300),
                           foregroundColor: Colors.blue,
                         ),
@@ -983,81 +1054,159 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                     runSpacing: 16,
                     children: [
                       // Section 1
-                      _detailBlock('Booking Information', Icons.receipt_long, const Color(0xFF1565C0), [
-                        _detailRow('Booking ID', currentBooking.code.isNotEmpty ? currentBooking.code : currentBooking.id.substring(currentBooking.id.length > 8 ? currentBooking.id.length - 8 : 0).toUpperCase()),
-                        _detailRow(
-                          'Booking Date',
-                          DateFormat(
-                            'dd MMM yyyy HH:mm',
-                          ).format(currentBooking.bookingDate),
-                        ),
-                        _detailStatusRow(
-                          'Status',
-                          currentBooking.bookingStatus.replaceAll('-', ' ').toUpperCase(),
-                          _statusColor(currentBooking.bookingStatus),
-                        ),
-                        _detailRow('Created By', currentBooking.createdByName),
-                        if (currentBooking.specialRequests.isNotEmpty)
-                          _detailRow('Special Requests', currentBooking.specialRequests),
-                      ]),
+                      _detailBlock(
+                        'Booking Information',
+                        Icons.receipt_long,
+                        const Color(0xFF1565C0),
+                        [
+                          _detailRow(
+                            'Booking ID',
+                            currentBooking.code.isNotEmpty
+                                ? currentBooking.code
+                                : currentBooking.id
+                                      .substring(
+                                        currentBooking.id.length > 8
+                                            ? currentBooking.id.length - 8
+                                            : 0,
+                                      )
+                                      .toUpperCase(),
+                          ),
+                          _detailRow(
+                            'Booking Date',
+                            DateFormat(
+                              'dd MMM yyyy HH:mm',
+                            ).format(currentBooking.bookingDate),
+                          ),
+                          _detailStatusRow(
+                            'Status',
+                            currentBooking.bookingStatus
+                                .replaceAll('-', ' ')
+                                .toUpperCase(),
+                            _statusColor(currentBooking.bookingStatus),
+                          ),
+                          _detailRow(
+                            'Created By',
+                            currentBooking.createdByName,
+                          ),
+                          if (currentBooking.specialRequests.isNotEmpty)
+                            _detailRow(
+                              'Special Requests',
+                              currentBooking.specialRequests,
+                            ),
+                        ],
+                      ),
                       // Section 2
-                      _detailBlock('Guest Information', Icons.person, const Color(0xFF2E7D32), [
-                        _detailRow('Guest Name', currentBooking.guestName),
-                        _detailRow('Phone', currentBooking.guestPhone),
-                        _detailRow('Email', currentBooking.guestEmail),
-                        if (currentBooking.guestNIC.isNotEmpty)
-                          _detailRow('NIC', currentBooking.guestNIC),
-                        if (currentBooking.guestNationality.isNotEmpty)
-                          _detailRow('Nationality', currentBooking.guestNationality),
-                      ]),
+                      _detailBlock(
+                        'Guest Information',
+                        Icons.person,
+                        const Color(0xFF2E7D32),
+                        [
+                          _detailRow('Guest Name', currentBooking.guestName),
+                          _detailRow('Phone', currentBooking.guestPhone),
+                          _detailRow('Email', currentBooking.guestEmail),
+                          if (currentBooking.guestNIC.isNotEmpty)
+                            _detailRow('NIC', currentBooking.guestNIC),
+                          if (currentBooking.guestNationality.isNotEmpty)
+                            _detailRow(
+                              'Nationality',
+                              currentBooking.guestNationality,
+                            ),
+                        ],
+                      ),
                       // Section 3
-                      _detailBlock('Property & Room', Icons.home, const Color(0xFF6A1B9A), [
-                        _detailRow('Property', currentBooking.propertyName),
-                        _detailRow('Address', currentBooking.propertyAddress),
-                        _detailRow('Room', '${currentBooking.roomNumber} (${currentBooking.roomType.toUpperCase()})'),
-                        _detailRow('Capacity', '${currentBooking.roomCapacity} Guests'),
-                        _detailRow(
-                          'Price/Night',
-                          'LKR ${currentBooking.roomPricePerNight.toStringAsFixed(0)}',
-                        ),
-                      ]),
-                      // Section 4
-                      _detailBlock('Stay Details', Icons.calendar_month, const Color(0xFFE65100), [
-                        _detailRow(
-                          'Check-In',
-                          DateFormat('dd MMM yyyy').format(currentBooking.checkIn),
-                        ),
-                        _detailRow(
-                          'Check-Out',
-                          DateFormat('dd MMM yyyy').format(currentBooking.checkOut),
-                        ),
-                        _detailHighlightRow('Nights', '${currentBooking.nights}', const Color(0xFFE65100)),
-                        _detailRow('Adults', '${currentBooking.adults}'),
-                        _detailRow('Children', '${currentBooking.children}'),
-                        _detailRow('Total Guests', '${currentBooking.numberOfGuests}'),
-                      ]),
-                      // Section 5
-                      _detailBlock('Pricing', Icons.attach_money, const Color(0xFF00695C), [
-                        _detailRow(
-                          'Room Charge',
-                          'LKR ${currentBooking.roomCharge.toStringAsFixed(0)}',
-                        ),
-                        _detailRow('Meal Plan', currentBooking.mealPlan.isNotEmpty ? currentBooking.mealPlan : 'None'),
-                        if (isAdmin && currentBooking.mealPlanTotal > 0)
-                          _detailRow('Meal Plan Charge', 'LKR ${currentBooking.mealPlanTotal.toStringAsFixed(0)}'),
-                        if (isAdmin && currentBooking.discount > 0)
-                          _detailRow('Discount', '- LKR ${currentBooking.discount.toStringAsFixed(0)}'),
-                        if (isAdmin && currentBooking.tax > 0)
-                          _detailRow('Taxes', 'LKR ${currentBooking.tax.toStringAsFixed(0)}'),
-                        if (isAdmin) ...[
-                          const Divider(height: 12),
-                          _detailHighlightRow(
-                            'Total',
-                            'LKR ${currentBooking.totalAmount.toStringAsFixed(0)}',
-                            const Color(0xFF00695C),
+                      _detailBlock(
+                        'Property & Room',
+                        Icons.home,
+                        const Color(0xFF6A1B9A),
+                        [
+                          _detailRow('Property', currentBooking.propertyName),
+                          _detailRow('Address', currentBooking.propertyAddress),
+                          _detailRow(
+                            'Room',
+                            '${currentBooking.roomNumber} (${currentBooking.roomType.toUpperCase()})',
+                          ),
+                          _detailRow(
+                            'Capacity',
+                            '${currentBooking.roomCapacity} Guests',
+                          ),
+                          _detailRow(
+                            'Price/Night',
+                            'LKR ${currentBooking.roomPricePerNight.toStringAsFixed(0)}',
                           ),
                         ],
-                      ]),
+                      ),
+                      // Section 4
+                      _detailBlock(
+                        'Stay Details',
+                        Icons.calendar_month,
+                        const Color(0xFFE65100),
+                        [
+                          _detailRow(
+                            'Check-In',
+                            DateFormat(
+                              'dd MMM yyyy',
+                            ).format(currentBooking.checkIn),
+                          ),
+                          _detailRow(
+                            'Check-Out',
+                            DateFormat(
+                              'dd MMM yyyy',
+                            ).format(currentBooking.checkOut),
+                          ),
+                          _detailHighlightRow(
+                            'Nights',
+                            '${currentBooking.nights}',
+                            const Color(0xFFE65100),
+                          ),
+                          _detailRow('Adults', '${currentBooking.adults}'),
+                          _detailRow('Children', '${currentBooking.children}'),
+                          _detailRow(
+                            'Total Guests',
+                            '${currentBooking.numberOfGuests}',
+                          ),
+                        ],
+                      ),
+                      // Section 5
+                      _detailBlock(
+                        'Pricing',
+                        Icons.attach_money,
+                        const Color(0xFF00695C),
+                        [
+                          _detailRow(
+                            'Room Charge',
+                            'LKR ${currentBooking.roomCharge.toStringAsFixed(0)}',
+                          ),
+                          _detailRow(
+                            'Meal Plan',
+                            currentBooking.mealPlan.isNotEmpty
+                                ? currentBooking.mealPlan
+                                : 'None',
+                          ),
+                          if (isAdmin && currentBooking.mealPlanTotal > 0)
+                            _detailRow(
+                              'Meal Plan Charge',
+                              'LKR ${currentBooking.mealPlanTotal.toStringAsFixed(0)}',
+                            ),
+                          if (isAdmin && currentBooking.discount > 0)
+                            _detailRow(
+                              'Discount',
+                              '- LKR ${currentBooking.discount.toStringAsFixed(0)}',
+                            ),
+                          if (isAdmin && currentBooking.tax > 0)
+                            _detailRow(
+                              'Taxes',
+                              'LKR ${currentBooking.tax.toStringAsFixed(0)}',
+                            ),
+                          if (isAdmin) ...[
+                            const Divider(height: 12),
+                            _detailHighlightRow(
+                              'Total',
+                              'LKR ${currentBooking.totalAmount.toStringAsFixed(0)}',
+                              const Color(0xFF00695C),
+                            ),
+                          ],
+                        ],
+                      ),
                       // Section 6
                       _detailBlock('Payment', Icons.payments, const Color(0xFF1565C0), [
                         _detailStatusRow(
@@ -1065,18 +1214,35 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                           currentBooking.paymentStatus.toUpperCase(),
                           _paymentColor(currentBooking.paymentStatus),
                         ),
-                        if (isAdmin) _detailRow('Paid Amount', 'LKR ${currentBooking.amountPaid.toStringAsFixed(0)}'),
+                        if (isAdmin)
+                          _detailRow(
+                            'Paid Amount',
+                            'LKR ${currentBooking.amountPaid.toStringAsFixed(0)}',
+                          ),
                         if (isAdmin)
                           _detailHighlightRow(
                             'Outstanding',
                             'LKR ${(currentBooking.totalAmount - currentBooking.amountPaid).toStringAsFixed(0)}',
-                            (currentBooking.totalAmount - currentBooking.amountPaid) > 0 ? Colors.red : const Color(0xFF2E7D32),
+                            (currentBooking.totalAmount -
+                                        currentBooking.amountPaid) >
+                                    0
+                                ? Colors.red
+                                : const Color(0xFF2E7D32),
                           ),
-                        _detailRow('Method', currentBooking.paymentMethod.isNotEmpty ? currentBooking.paymentMethod : 'N/A'),
+                        _detailRow(
+                          'Method',
+                          currentBooking.paymentMethod.isNotEmpty
+                              ? currentBooking.paymentMethod
+                              : 'N/A',
+                        ),
                         const SizedBox(height: 12),
                         Row(
                           children: [
-                            Icon(Icons.history, size: 14, color: Colors.blueGrey.shade600),
+                            Icon(
+                              Icons.history,
+                              size: 14,
+                              color: Colors.blueGrey.shade600,
+                            ),
                             const SizedBox(width: 6),
                             Text(
                               'Payment History',
@@ -1096,7 +1262,9 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                               child: SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               ),
                             ),
                           )
@@ -1125,39 +1293,47 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                               margin: const EdgeInsets.only(bottom: 6),
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: (p.status == 'completed' || p.status == 'paid')
+                                color:
+                                    (p.status == 'completed' ||
+                                        p.status == 'paid')
                                     ? Colors.green.shade50
                                     : p.status == 'pending'
-                                        ? Colors.orange.shade50
-                                        : Colors.red.shade50,
+                                    ? Colors.orange.shade50
+                                    : Colors.red.shade50,
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
-                                  color: (p.status == 'completed' || p.status == 'paid')
+                                  color:
+                                      (p.status == 'completed' ||
+                                          p.status == 'paid')
                                       ? Colors.green.shade200
                                       : p.status == 'pending'
-                                          ? Colors.orange.shade200
-                                          : Colors.red.shade200,
+                                      ? Colors.orange.shade200
+                                      : Colors.red.shade200,
                                 ),
                               ),
                               child: Row(
                                 children: [
                                   Icon(
-                                    (p.status == 'completed' || p.status == 'paid')
+                                    (p.status == 'completed' ||
+                                            p.status == 'paid')
                                         ? Icons.check_circle
                                         : p.status == 'pending'
-                                            ? Icons.schedule
-                                            : Icons.cancel,
+                                        ? Icons.schedule
+                                        : Icons.cancel,
                                     size: 16,
-                                    color: (p.status == 'completed' || p.status == 'paid')
+                                    color:
+                                        (p.status == 'completed' ||
+                                            p.status == 'paid')
                                         ? Colors.green.shade600
                                         : p.status == 'pending'
-                                            ? Colors.orange.shade600
-                                            : Colors.red.shade600,
+                                        ? Colors.orange.shade600
+                                        : Colors.red.shade600,
                                   ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           'LKR ${p.amount.toStringAsFixed(0)} (${p.type.toUpperCase()})',
@@ -1177,13 +1353,18 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 2,
+                                    ),
                                     decoration: BoxDecoration(
-                                      color: (p.status == 'completed' || p.status == 'paid')
+                                      color:
+                                          (p.status == 'completed' ||
+                                              p.status == 'paid')
                                           ? Colors.green
                                           : p.status == 'pending'
-                                              ? Colors.orange
-                                              : Colors.red,
+                                          ? Colors.orange
+                                          : Colors.red,
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
@@ -1247,77 +1428,105 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                           ),
                       ]),
                       // Section 7
-                      _detailBlock('Documents', Icons.folder_open, Colors.blueGrey, [
-                        _detailActionRow('NIC Copy', 'View', () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Displaying NIC copy...'),
-                            ),
-                          );
-                        }),
-                        _detailActionRow('Passport', 'View', () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Displaying Passport copy...'),
-                            ),
-                          );
-                        }),
-                      ]),
+                      _detailBlock(
+                        'Documents',
+                        Icons.folder_open,
+                        Colors.blueGrey,
+                        [
+                          _detailActionRow('NIC Copy', 'View', () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Displaying NIC copy...'),
+                              ),
+                            );
+                          }),
+                          _detailActionRow('Passport', 'View', () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Displaying Passport copy...'),
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
                       // Section 8
-                      _detailBlock('Notes', Icons.notes, const Color(0xFF795548), [
-                        _detailRow(
-                          'Special Requests',
-                          currentBooking.specialRequests.isNotEmpty
-                              ? currentBooking.specialRequests
-                              : 'None',
-                        ),
-                        _detailRow(
-                          'Internal Notes',
-                          currentBooking.notes.isNotEmpty
-                              ? currentBooking.notes
-                              : 'None',
-                        ),
-                        if (currentBooking.cancellationReason.isNotEmpty)
-                          _detailRow('Cancellation Reason', currentBooking.cancellationReason),
-                      ]),
-                      // Section 9
-                      _detailBlock('Timeline', Icons.timeline, const Color(0xFF4527A0), [
-                        _detailTimelineRow(
-                          DateFormat('dd MMM').format(currentBooking.bookingDate),
-                          'Reservation Created',
-                          Icons.add_circle,
-                          const Color(0xFF2E7D32),
-                        ),
-                        if (currentBooking.paymentStatus != 'pending')
-                          _detailTimelineRow(
-                            DateFormat('dd MMM').format(currentBooking.bookingDate),
-                            'Payment Received',
-                            Icons.payment,
-                            const Color(0xFF1565C0),
+                      _detailBlock(
+                        'Notes',
+                        Icons.notes,
+                        const Color(0xFF795548),
+                        [
+                          _detailRow(
+                            'Special Requests',
+                            currentBooking.specialRequests.isNotEmpty
+                                ? currentBooking.specialRequests
+                                : 'None',
                           ),
-                        if (currentBooking.bookingStatus == 'checked-in')
+                          _detailRow(
+                            'Internal Notes',
+                            currentBooking.notes.isNotEmpty
+                                ? currentBooking.notes
+                                : 'None',
+                          ),
+                          if (currentBooking.cancellationReason.isNotEmpty)
+                            _detailRow(
+                              'Cancellation Reason',
+                              currentBooking.cancellationReason,
+                            ),
+                        ],
+                      ),
+                      // Section 9
+                      _detailBlock(
+                        'Timeline',
+                        Icons.timeline,
+                        const Color(0xFF4527A0),
+                        [
                           _detailTimelineRow(
-                            DateFormat('dd MMM').format(currentBooking.checkIn),
-                            'Guest Checked In',
-                            Icons.login,
+                            DateFormat(
+                              'dd MMM',
+                            ).format(currentBooking.bookingDate),
+                            'Reservation Created',
+                            Icons.add_circle,
                             const Color(0xFF2E7D32),
                           ),
-                        if (currentBooking.bookingStatus == 'checked-out' ||
-                            currentBooking.bookingStatus == 'completed')
-                          _detailTimelineRow(
-                            DateFormat('dd MMM').format(currentBooking.checkOut),
-                            'Guest Checked Out',
-                            Icons.logout,
-                            Colors.blueGrey,
-                          ),
-                        if (currentBooking.bookingStatus == 'cancelled')
-                          _detailTimelineRow(
-                            DateFormat('dd MMM').format(currentBooking.bookingDate),
-                            'Booking Cancelled',
-                            Icons.cancel,
-                            Colors.red,
-                          ),
-                      ]),
+                          if (currentBooking.paymentStatus != 'pending')
+                            _detailTimelineRow(
+                              DateFormat(
+                                'dd MMM',
+                              ).format(currentBooking.bookingDate),
+                              'Payment Received',
+                              Icons.payment,
+                              const Color(0xFF1565C0),
+                            ),
+                          if (currentBooking.bookingStatus == 'checked-in')
+                            _detailTimelineRow(
+                              DateFormat(
+                                'dd MMM',
+                              ).format(currentBooking.checkIn),
+                              'Guest Checked In',
+                              Icons.login,
+                              const Color(0xFF2E7D32),
+                            ),
+                          if (currentBooking.bookingStatus == 'checked-out' ||
+                              currentBooking.bookingStatus == 'completed')
+                            _detailTimelineRow(
+                              DateFormat(
+                                'dd MMM',
+                              ).format(currentBooking.checkOut),
+                              'Guest Checked Out',
+                              Icons.logout,
+                              Colors.blueGrey,
+                            ),
+                          if (currentBooking.bookingStatus == 'cancelled')
+                            _detailTimelineRow(
+                              DateFormat(
+                                'dd MMM',
+                              ).format(currentBooking.bookingDate),
+                              'Booking Cancelled',
+                              Icons.cancel,
+                              Colors.red,
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                 ],
@@ -1363,7 +1572,10 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Record Payment',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -1388,16 +1600,25 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                         children: [
                           Text(
                             'Booking: ${booking.code}',
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
                             'Total: LKR ${booking.totalAmount.toStringAsFixed(0)}',
-                            style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 12,
+                            ),
                           ),
                           Text(
                             'Paid: LKR ${booking.amountPaid.toStringAsFixed(0)}',
-                            style: TextStyle(color: Colors.green.shade700, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.green.shade700,
+                              fontSize: 12,
+                            ),
                           ),
                           const Divider(height: 12),
                           Text(
@@ -1424,7 +1645,10 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                         ),
                         child: Text(
                           errorMessage!,
-                          style: TextStyle(color: Colors.red.shade700, fontSize: 12),
+                          style: TextStyle(
+                            color: Colors.red.shade700,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     WebFormField(
@@ -1434,7 +1658,8 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) return 'Required';
                         final val = double.tryParse(v.trim());
-                        if (val == null || val <= 0) return 'Must be greater than 0';
+                        if (val == null || val <= 0)
+                          return 'Must be greater than 0';
                         if (val > remainingBalance + 0.01) {
                           return 'Cannot exceed LKR ${remainingBalance.toStringAsFixed(0)}';
                         }
@@ -1448,8 +1673,14 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                       items: const [
                         DropdownMenuItem(value: 'cash', child: Text('Cash')),
                         DropdownMenuItem(value: 'card', child: Text('Card')),
-                        DropdownMenuItem(value: 'bank_transfer', child: Text('Bank Transfer')),
-                        DropdownMenuItem(value: 'online', child: Text('Online')),
+                        DropdownMenuItem(
+                          value: 'bank_transfer',
+                          child: Text('Bank Transfer'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'online',
+                          child: Text('Online'),
+                        ),
                       ],
                       onChanged: (v) {
                         if (v != null) setDialogState(() => method = v);
@@ -1464,10 +1695,22 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                       initialValue: type,
                       isExpanded: true,
                       items: const [
-                        DropdownMenuItem(value: 'full', child: Text('Full Payment')),
-                        DropdownMenuItem(value: 'partial', child: Text('Partial Payment')),
-                        DropdownMenuItem(value: 'advance', child: Text('Advance')),
-                        DropdownMenuItem(value: 'refund', child: Text('Refund')),
+                        DropdownMenuItem(
+                          value: 'full',
+                          child: Text('Full Payment'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'partial',
+                          child: Text('Partial Payment'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'advance',
+                          child: Text('Advance'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'refund',
+                          child: Text('Refund'),
+                        ),
                       ],
                       onChanged: (v) {
                         if (v != null) setDialogState(() => type = v);
@@ -1482,8 +1725,14 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                       initialValue: status,
                       isExpanded: true,
                       items: const [
-                        DropdownMenuItem(value: 'completed', child: Text('Completed')),
-                        DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                        DropdownMenuItem(
+                          value: 'completed',
+                          child: Text('Completed'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'pending',
+                          child: Text('Pending'),
+                        ),
                       ],
                       onChanged: (v) {
                         if (v != null) setDialogState(() => status = v);
@@ -1507,7 +1756,10 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                     ? const SizedBox(
                         height: 14,
                         width: 14,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.check, size: 14),
                 label: Text(isSaving ? 'Recording...' : 'Record Payment'),
@@ -1535,7 +1787,9 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                               Navigator.pop(ctx);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Payment recorded successfully'),
+                                  content: Text(
+                                    'Payment recorded successfully',
+                                  ),
                                   backgroundColor: Colors.green,
                                 ),
                               );
@@ -1543,20 +1797,27 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                           } else {
                             setDialogState(() {
                               isSaving = false;
-                              errorMessage = 'Failed to record payment. It may already exist.';
+                              errorMessage =
+                                  'Failed to record payment. It may already exist.';
                             });
                           }
                         } catch (e) {
                           setDialogState(() {
                             isSaving = false;
-                            errorMessage = e.toString().replaceAll('Exception: ', '');
+                            errorMessage = e.toString().replaceAll(
+                              'Exception: ',
+                              '',
+                            );
                           });
                         }
                       },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.indigo,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ],
@@ -1566,7 +1827,12 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
     );
   }
 
-  Widget _detailBlock(String title, IconData icon, Color color, List<Widget> children) {
+  Widget _detailBlock(
+    String title,
+    IconData icon,
+    Color color,
+    List<Widget> children,
+  ) {
     return SizedBox(
       width: 420,
       child: Card(
@@ -1684,14 +1950,22 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -1699,7 +1973,12 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
     );
   }
 
-  Widget _detailTimelineRow(String date, String event, IconData icon, Color color) {
+  Widget _detailTimelineRow(
+    String date,
+    String event,
+    IconData icon,
+    Color color,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -1714,7 +1993,11 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
           Expanded(
             child: Text(
               event,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: color),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -1757,12 +2040,20 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
     );
   }
 
-  Widget _statusActionBtn(String label, IconData icon, Color color, VoidCallback onTap) {
+  Widget _statusActionBtn(
+    String label,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return SizedBox(
       height: 30,
       child: ElevatedButton.icon(
         icon: Icon(icon, size: 13),
-        label: Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600)),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        ),
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
@@ -2094,7 +2385,7 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                     ),
                     Padding(
                       padding: const EdgeInsets.only(bottom: 16),
-                        child: DropdownButtonFormField<String>(
+                      child: DropdownButtonFormField<String>(
                         initialValue: selectedPropertyId,
                         isExpanded: true,
                         items: properties
@@ -2108,15 +2399,14 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                         onChanged: (v) async {
                           setDialogState(() => selectedPropertyId = v);
                           if (v != null) {
-                            await ref
-                                .read(roomProvider.notifier)
-                                .fetchRooms(v);
+                            await ref.read(roomProvider.notifier).fetchRooms(v);
                             setDialogState(() {
                               selectedRoomId = null;
                             });
                           }
                         },
-                        validator: (v) => v == null ? 'Select a property' : null,
+                        validator: (v) =>
+                            v == null ? 'Select a property' : null,
                         decoration: const InputDecoration(
                           labelText: 'Property',
                           border: OutlineInputBorder(),
@@ -2127,14 +2417,12 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                       padding: const EdgeInsets.only(bottom: 16),
                       child: Builder(
                         builder: (ctx) {
-                          final currentRooms =
-                              ref.watch(roomProvider).rooms;
+                          final currentRooms = ref.watch(roomProvider).rooms;
                           final availableForSelection = currentRooms
                               .where(
                                 (r) =>
                                     r.status == 'available' ||
-                                    (booking != null &&
-                                        r.id == booking.roomId),
+                                    (booking != null && r.id == booking.roomId),
                               )
                               .toList();
                           return DropdownButtonFormField<String>(
@@ -2268,11 +2556,14 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                           return;
                         }
                         setDialogState(() => isSaving = true);
-                        if (selectedPropertyId == null || selectedRoomId == null) {
+                        if (selectedPropertyId == null ||
+                            selectedRoomId == null) {
                           setDialogState(() => isSaving = false);
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             const SnackBar(
-                              content: Text('Please select a property and room'),
+                              content: Text(
+                                'Please select a property and room',
+                              ),
                               backgroundColor: Colors.orange,
                             ),
                           );
@@ -2280,13 +2571,17 @@ class _WebBookingsScreenState extends ConsumerState<WebBookingsScreen> {
                         }
                         final currentRooms = ref.read(roomProvider).rooms;
                         final selectedRoom = currentRooms.isNotEmpty
-                            ? currentRooms.where((r) => r.id == selectedRoomId).firstOrNull
+                            ? currentRooms
+                                  .where((r) => r.id == selectedRoomId)
+                                  .firstOrNull
                             : null;
                         if (selectedRoom == null) {
                           setDialogState(() => isSaving = false);
                           ScaffoldMessenger.of(ctx).showSnackBar(
                             const SnackBar(
-                              content: Text('Selected room not found. Please re-select.'),
+                              content: Text(
+                                'Selected room not found. Please re-select.',
+                              ),
                               backgroundColor: Colors.orange,
                             ),
                           );

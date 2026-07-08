@@ -1,27 +1,9 @@
-/// Guest Feedback Management Screen — feedback list, stats, CSV export.
-///
-/// Tabbed interface for managing guest feedback and reviews. Two tabs:
-/// "All Feedback" shows individual reviews in a data table, and "Statistics"
-/// displays aggregate analytics with charts.
-///
-/// Key features:
-/// - All Feedback tab: searchable table with rating stars, property filter,
-///   response management (admin can reply to feedback)
-/// - Statistics tab: rating distribution bar chart, average rating, total reviews,
-///   response rate, CSV export of filtered data
-/// - Multi-criteria filters: search, rating, property, date range
-/// - Quick rating badge with color coding (5=green, 4=blue, 3=yellow, 2=orange, 1=red)
-/// - Response dialog for admin to reply to guest feedback
-///
-/// Uses feedbackProvider (Riverpod) for data. Property list fetched separately
-/// for filter dropdowns. Local state tracks filters and tab selection.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 import '../widgets/web_data_table.dart';
 
-/// Guest feedback management screen with list and statistics views.
 class WebFeedbackScreen extends ConsumerStatefulWidget {
   const WebFeedbackScreen({super.key});
 
@@ -1116,15 +1098,25 @@ class _WebFeedbackScreenState extends ConsumerState<WebFeedbackScreen>
             scrollable: true,
             title: Row(
               children: [
-                const Icon(Icons.rate_review, size: 20, color: Color(0xFFE65100)),
+                const Icon(
+                  Icons.rate_review,
+                  size: 20,
+                  color: Color(0xFFE65100),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Review Details',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
-                Text(displayId, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                Text(
+                  displayId,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
                 const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -1140,33 +1132,82 @@ class _WebFeedbackScreenState extends ConsumerState<WebFeedbackScreen>
                   // Status Banner
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
-                      color: (status == 'resolved' ? const Color(0xFF2E7D32) : status == 'pending' ? Colors.orange : const Color(0xFF1565C0)).withOpacity(0.08),
+                      color:
+                          (status == 'resolved'
+                                  ? const Color(0xFF2E7D32)
+                                  : status == 'pending'
+                                  ? Colors.orange
+                                  : const Color(0xFF1565C0))
+                              .withOpacity(0.08),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: (status == 'resolved' ? const Color(0xFF2E7D32) : status == 'pending' ? Colors.orange : const Color(0xFF1565C0)).withOpacity(0.2)),
+                      border: Border.all(
+                        color:
+                            (status == 'resolved'
+                                    ? const Color(0xFF2E7D32)
+                                    : status == 'pending'
+                                    ? Colors.orange
+                                    : const Color(0xFF1565C0))
+                                .withOpacity(0.2),
+                      ),
                     ),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: status == 'resolved' ? const Color(0xFF2E7D32) : status == 'pending' ? Colors.orange : const Color(0xFF1565C0),
+                            color: status == 'resolved'
+                                ? const Color(0xFF2E7D32)
+                                : status == 'pending'
+                                ? Colors.orange
+                                : const Color(0xFF1565C0),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             status.toString().toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Text('${(f['rating'] ?? 0)} ★', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(
+                          '${(f['rating'] ?? 0)} ★',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        Text('•', style: TextStyle(color: Colors.grey.shade400)),
+                        Text(
+                          '•',
+                          style: TextStyle(color: Colors.grey.shade400),
+                        ),
                         const SizedBox(width: 8),
-                        Text(f['guestName'] ?? 'Guest', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                        Text(
+                          f['guestName'] ?? 'Guest',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 13,
+                          ),
+                        ),
                         const Spacer(),
-                        Text(f['propertyName'] ?? '', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                        Text(
+                          f['propertyName'] ?? '',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),

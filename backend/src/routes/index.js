@@ -1,17 +1,5 @@
-// ==========================================
-// STUDENT GUIDE TO THE ROUTER FILE (index.js)
-// ==========================================
-// This file acts as the 'Front Desk' of our entire backend API. 
-// It defines every single URL endpoint (e.g., /api/bookings).
-// 
-// IMPORTANT: You will see massive blocks of comments starting with /* @swagger */.
-// These are not regular code! They are automatically read by the Swagger UI library
-// to generate our beautiful, interactive documentation page at /api-docs.
-// Do not modify the Swagger blocks unless you are updating the API documentation!
-// ==========================================
 
-import { Router } from 'express'; // Imports the Express Router to create URL paths
-// --- CONTROLLERS (The Managers that handle the requests) ---
+import { Router } from 'express'; 
 import * as authController from '../controllers/auth.controller.js';
 import * as userController from '../controllers/user.controller.js';
 import * as propertyController from '../controllers/property.controller.js';
@@ -28,15 +16,13 @@ import * as exportController from '../controllers/export.controller.js';
 import * as passwordController from '../controllers/password.controller.js';
 import * as auditController from '../controllers/audit.controller.js';
 
-// --- MIDDLEWARES (The Security Guards) ---
-import { authenticate, authorize } from '../middlewares/auth.middleware.js'; // Checks JWT tokens and Roles
-import validate from '../middlewares/validate.middleware.js'; // Checks if incoming JSON data is formatted correctly
+import { authenticate, authorize } from '../middlewares/auth.middleware.js'; 
+import validate from '../middlewares/validate.middleware.js'; 
 
-// --- UTILITIES (Helpers for uploading files) ---
 import { uploadSingle, uploadMultiple } from '../utils/upload.util.js';
 import { uploadFileToImgBB, uploadMultipleToImgBB } from '../utils/imgbb.util.js';
 
-// --- VALIDATION SCHEMAS (The rules for the data) ---
+// --- VALIDATION SCHEMAS 
 import {
   registerSchema,
   loginSchema,
@@ -66,11 +52,10 @@ import {
   guestBookingSchema,
 } from '../validators/domain.validator.js';
 
-const router = Router(); // Initializes the Express Router object
+const router = Router();
 
-// Define reusable arrays for Role-Based Access Control
-const managerRoles = ['admin', 'manager']; // People who can manage the hotel
-const staffRoles = ['admin', 'manager', 'staff']; // People who can view tasks
+const managerRoles = ['admin', 'manager']; 
+const staffRoles = ['admin', 'manager', 'staff']; 
 
 /*
   @swagger
@@ -120,7 +105,7 @@ router.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ===================== DASHBOARD STATS (All Properties Consolidated) =====================
+//DASHBOARD STATS
 router.get('/dashboard/stats', authenticate, async (req, res, next) => {
   try {
     const Room = (await import('../models/room.model.js')).default;

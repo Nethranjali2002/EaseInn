@@ -1,20 +1,3 @@
-/// Room Management Screen — CRUD, filters, bulk creation, price management.
-///
-/// Displays all rooms across properties in a filterable data table. Provides full
-/// room lifecycle management including creation, editing, status changes, and
-/// bulk room creation for efficient setup of new properties.
-///
-/// Key features:
-/// - Summary cards: total rooms, available, occupied, maintenance, out-of-service
-/// - Filters: search by room number/property, status, room type, property assignment
-/// - Room creation/editing dialog with property-dependent room type selection
-/// - Bulk room creation: generate multiple rooms with floor and numbering options
-/// - Inline room type management from within the room dialog
-/// - Status toggle dropdown for quick status changes
-/// - Price management via dialog for setting base/weekend/seasonal rates
-///
-/// State management: roomProvider (Riverpod) with onRefresh. Selected room tracked
-/// locally for action menus. Property list fetched separately for filter/dropdown options.
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -39,7 +22,6 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
   final TextEditingController _minPriceController = TextEditingController();
   final TextEditingController _maxPriceController = TextEditingController();
 
-  // Filter state variables — all default to show everything
   String _searchQuery = '';
   String? _selectedPropertyId = 'All';
   String _selectedRoomType = 'All';
@@ -205,7 +187,10 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2563EB),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -216,7 +201,10 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF059669),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -648,10 +636,16 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                 Expanded(
                   child: Text(
                     'Room ${r.roomNumber}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
-                Text(propertyName, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                Text(
+                  propertyName,
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                ),
                 const SizedBox(width: 8),
                 IconButton(
                   icon: const Icon(Icons.close),
@@ -664,179 +658,307 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
               height: MediaQuery.of(context).size.height * 0.75,
               child: SingleChildScrollView(
                 child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Status Banner
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _roomStatusColor(r.status).withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: _roomStatusColor(r.status).withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _roomStatusColor(r.status),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            r.status.toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Status Banner
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _roomStatusColor(r.status).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _roomStatusColor(r.status).withOpacity(0.2),
                         ),
-                        const SizedBox(width: 12),
-                        Text(r.roomNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        const SizedBox(width: 8),
-                        Text('•', style: TextStyle(color: Colors.grey.shade400)),
-                        const SizedBox(width: 8),
-                        Text('${r.roomType.toUpperCase()} • Floor ${r.floor}', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
-                        const Spacer(),
-                        Text('LKR ${r.basePrice.toStringAsFixed(0)} / night', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF00695C), fontSize: 13)),
-                      ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _roomStatusColor(r.status),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              r.status.toUpperCase(),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            r.roomNumber,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '•',
+                            style: TextStyle(color: Colors.grey.shade400),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${r.roomType.toUpperCase()} • Floor ${r.floor}',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'LKR ${r.basePrice.toStringAsFixed(0)} / night',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF00695C),
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (r.images.isNotEmpty) ...[
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        resolveImageUrl(r.images[selectedImageIndex]),
-                        height: 350,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => Container(
+                    const SizedBox(height: 16),
+                    if (r.images.isNotEmpty) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          resolveImageUrl(r.images[selectedImageIndex]),
                           height: 350,
-                          color: Colors.grey.shade100,
-                          child: const Center(
-                            child: Icon(Icons.broken_image, size: 48, color: Colors.grey),
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, err, stack) => Container(
+                            height: 350,
+                            color: Colors.grey.shade100,
+                            child: const Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 48,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (r.images.length > 1)
-                      SizedBox(
-                        height: 80,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: r.images.length,
-                          separatorBuilder: (_, __) => const SizedBox(width: 8),
-                          itemBuilder: (context, index) {
-                            final isSelected = index == selectedImageIndex;
-                            return GestureDetector(
-                              onTap: () => setDialogState(() => selectedImageIndex = index),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isSelected ? const Color(0xFF1565C0) : Colors.transparent,
-                                    width: 2,
-                                  ),
+                      const SizedBox(height: 12),
+                      if (r.images.length > 1)
+                        SizedBox(
+                          height: 80,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: r.images.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              final isSelected = index == selectedImageIndex;
+                              return GestureDetector(
+                                onTap: () => setDialogState(
+                                  () => selectedImageIndex = index,
                                 ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(6),
-                                  child: Image.network(
-                                    resolveImageUrl(r.images[index]),
-                                    width: 120,
-                                    height: 80,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (ctx, err, stack) => Container(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? const Color(0xFF1565C0)
+                                          : Colors.transparent,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Image.network(
+                                      resolveImageUrl(r.images[index]),
                                       width: 120,
-                                      color: Colors.grey.shade200,
-                                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                                      height: 80,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (ctx, err, stack) =>
+                                          Container(
+                                            width: 120,
+                                            color: Colors.grey.shade200,
+                                            child: const Icon(
+                                              Icons.broken_image,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                  ],
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      _detailBlock('Room Information', Icons.room, const Color(0xFF1565C0), [
-                        _detailRow('Property', propertyName),
-                        _detailRow('Room Number', r.roomNumber),
-                        _detailRow('Room Name', r.name.isNotEmpty ? r.name : '-'),
-                        _detailRow('Room Type', r.roomType.toUpperCase()),
-                        _detailRow('Floor', '${r.floor}'),
-                        _detailHighlightRow('Base Price', 'LKR ${r.basePrice.toStringAsFixed(0)} / night', const Color(0xFF00695C)),
-                      ]),
-                      _detailBlock('Capacity', Icons.people, const Color(0xFF6A1B9A), [
-                        _detailRow('Max Guests', '${r.capacity}'),
-                        _detailRow('Max Adults', '${r.capacity}'),
-                        _detailRow('Max Children', '1'),
-                      ]),
-                      _detailBlock('Amenities', Icons.chair, const Color(0xFFE65100), [
-                        if (r.amenities.isEmpty)
-                          const Text('No amenities listed.', style: TextStyle(color: Colors.grey, fontSize: 12))
-                        else
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: r.amenities.map((a) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.blue.shade50,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.blue.shade200),
-                              ),
-                              child: Text(a, style: TextStyle(fontSize: 11, color: Colors.blue.shade700)),
-                            )).toList(),
-                          ),
-                      ]),
-                      _detailBlock('Current Status', Icons.info_outline, const Color(0xFF2E7D32), [
-                        if (r.currentBookingId != null && r.currentBookingId!.isNotEmpty)
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _detailRow('Booking ID', r.currentBooking),
-                              _detailRow('Status', 'Occupied'),
-                              const SizedBox(height: 8),
-                              SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton.icon(
-                                  icon: const Icon(Icons.launch, size: 14),
-                                  label: const Text('View Booking', style: TextStyle(fontSize: 12)),
-                                  onPressed: () {
-                                    Navigator.pop(ctx);
-                                    context.go('/web/bookings?search=${r.currentBookingId}');
-                                  },
-                                ),
-                              ),
-                            ],
-                          )
-                        else
-                          Row(
-                            children: [
-                              const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                              const SizedBox(width: 8),
-                              Text('Available - No active booking', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
-                            ],
-                          ),
-                      ]),
-                      _detailBlock('Maintenance', Icons.build, const Color(0xFF795548), [
-                        Row(
-                          children: [
-                            const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
-                            const SizedBox(width: 8),
-                            Text('All checks passed. No issues.', style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
+                    ],
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        _detailBlock(
+                          'Room Information',
+                          Icons.room,
+                          const Color(0xFF1565C0),
+                          [
+                            _detailRow('Property', propertyName),
+                            _detailRow('Room Number', r.roomNumber),
+                            _detailRow(
+                              'Room Name',
+                              r.name.isNotEmpty ? r.name : '-',
+                            ),
+                            _detailRow('Room Type', r.roomType.toUpperCase()),
+                            _detailRow('Floor', '${r.floor}'),
+                            _detailHighlightRow(
+                              'Base Price',
+                              'LKR ${r.basePrice.toStringAsFixed(0)} / night',
+                              const Color(0xFF00695C),
+                            ),
                           ],
                         ),
-                      ]),
-                    ],
-                  ),
-                ],
-              ),
+                        _detailBlock(
+                          'Capacity',
+                          Icons.people,
+                          const Color(0xFF6A1B9A),
+                          [
+                            _detailRow('Max Guests', '${r.capacity}'),
+                            _detailRow('Max Adults', '${r.capacity}'),
+                            _detailRow('Max Children', '1'),
+                          ],
+                        ),
+                        _detailBlock(
+                          'Amenities',
+                          Icons.chair,
+                          const Color(0xFFE65100),
+                          [
+                            if (r.amenities.isEmpty)
+                              const Text(
+                                'No amenities listed.',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              )
+                            else
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: r.amenities
+                                    .map(
+                                      (a) => Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue.shade50,
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.blue.shade200,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          a,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.blue.shade700,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                          ],
+                        ),
+                        _detailBlock(
+                          'Current Status',
+                          Icons.info_outline,
+                          const Color(0xFF2E7D32),
+                          [
+                            if (r.currentBookingId != null &&
+                                r.currentBookingId!.isNotEmpty)
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _detailRow('Booking ID', r.currentBooking),
+                                  _detailRow('Status', 'Occupied'),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      icon: const Icon(Icons.launch, size: 14),
+                                      label: const Text(
+                                        'View Booking',
+                                        style: TextStyle(fontSize: 12),
+                                      ),
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                        context.go(
+                                          '/web/bookings?search=${r.currentBookingId}',
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              )
+                            else
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
+                                    size: 16,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Available - No active booking',
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                          ],
+                        ),
+                        _detailBlock(
+                          'Maintenance',
+                          Icons.build,
+                          const Color(0xFF795548),
+                          [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.check_circle_outline,
+                                  color: Colors.green,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'All checks passed. No issues.',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -882,14 +1004,22 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -897,7 +1027,12 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
     );
   }
 
-  Widget _detailBlock(String title, IconData icon, Color color, List<Widget> children) {
+  Widget _detailBlock(
+    String title,
+    IconData icon,
+    Color color,
+    List<Widget> children,
+  ) {
     return SizedBox(
       width: 420,
       child: Card(
@@ -972,13 +1107,16 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
     final adultsController = TextEditingController(
       text: room?.capacity.toString() ?? '2',
     );
-    final childrenController = TextEditingController(text: room != null ? '0' : '1');
+    final childrenController = TextEditingController(
+      text: room != null ? '0' : '1',
+    );
 
     void updateCapacity() {
       final adults = int.tryParse(adultsController.text) ?? 0;
       final children = int.tryParse(childrenController.text) ?? 0;
       capacityController.text = (adults + children).toString();
     }
+
     adultsController.addListener(updateCapacity);
     childrenController.addListener(updateCapacity);
     final priceController = TextEditingController(
@@ -1015,7 +1153,7 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
       input.onChange.listen((_) async {
         if (input.files == null || input.files!.isEmpty) return;
         final files = input.files!;
-        
+
         setDialogState(() => isUploading = true);
         try {
           final api = ref.read(apiClientProvider);
@@ -1036,7 +1174,10 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
             final formData = FormData.fromMap({
               'file': MultipartFile.fromBytes(bytes, filename: file.name),
             });
-            final response = await api.dio.post('/upload/single', data: formData);
+            final response = await api.dio.post(
+              '/upload/single',
+              data: formData,
+            );
             final rawUrl = response.data['data']['url'] as String;
             final fullUrl = resolveImageUrl(rawUrl);
             setDialogState(() => images.add(fullUrl));
@@ -1488,16 +1629,26 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
       final children = int.tryParse(childrenController.text) ?? 0;
       capacityController.text = (adults + children).toString();
     }
+
     adultsController.addListener(updateCapacity);
     childrenController.addListener(updateCapacity);
 
     // List of amenities
     final amenitiesList = [
-      'WiFi', 'AC', 'TV', 'Mini Bar', 'Balcony', 'Sea View',
-      'Coffee Maker', 'Safe', 'Hair Dryer', 'Iron', 'Washing Machine'
+      'WiFi',
+      'AC',
+      'TV',
+      'Mini Bar',
+      'Balcony',
+      'Sea View',
+      'Coffee Maker',
+      'Safe',
+      'Hair Dryer',
+      'Iron',
+      'Washing Machine',
     ];
     final selectedAmenities = <String>{};
-    
+
     // Images for gallery
     List<String> images = [];
     bool isUploading = false;
@@ -1532,7 +1683,10 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
             final formData = FormData.fromMap({
               'file': MultipartFile.fromBytes(bytes, filename: file.name),
             });
-            final response = await api.dio.post('/upload/single', data: formData);
+            final response = await api.dio.post(
+              '/upload/single',
+              data: formData,
+            );
             final rawUrl = response.data['data']['url'] as String;
             final fullUrl = resolveImageUrl(rawUrl);
             setDialogState(() => images.add(fullUrl));
@@ -1540,7 +1694,10 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
         } catch (e) {
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red),
+              SnackBar(
+                content: Text('Upload failed: $e'),
+                backgroundColor: Colors.red,
+              ),
             );
           }
         } finally {
@@ -1566,73 +1723,160 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                       // PROPERTY ASSIGNMENT
                       const Text(
                         'Property',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
                       ),
                       const Divider(),
                       DropdownButtonFormField<String>(
                         value: selectedPropertyId,
-                        items: properties.map((p) => DropdownMenuItem(
-                          value: p.id, child: Text(p.name),
-                        )).toList(),
-                        onChanged: (v) => setDialogState(() => selectedPropertyId = v),
+                        items: properties
+                            .map(
+                              (p) => DropdownMenuItem(
+                                value: p.id,
+                                child: Text(p.name),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) =>
+                            setDialogState(() => selectedPropertyId = v),
                         decoration: const InputDecoration(
-                          labelText: 'Property *', border: OutlineInputBorder(),
+                          labelText: 'Property *',
+                          border: OutlineInputBorder(),
                         ),
-                        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
                       ),
                       const SizedBox(height: 16),
 
                       // BASIC ROOM INFORMATION
                       const Text(
                         'Basic Room Information (applies to all rooms)',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
                       ),
                       const Divider(),
                       DropdownButtonFormField<String>(
                         value: roomType,
                         items: const [
-                          DropdownMenuItem(value: 'deluxe', child: Text('Deluxe')),
-                          DropdownMenuItem(value: 'family', child: Text('Family')),
-                          DropdownMenuItem(value: 'suite', child: Text('Suite')),
-                          DropdownMenuItem(value: 'cabana', child: Text('Cabana')),
-                          DropdownMenuItem(value: 'single', child: Text('Single')),
-                          DropdownMenuItem(value: 'double', child: Text('Double')),
-                          DropdownMenuItem(value: 'presidential', child: Text('Presidential')),
+                          DropdownMenuItem(
+                            value: 'deluxe',
+                            child: Text('Deluxe'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'family',
+                            child: Text('Family'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'suite',
+                            child: Text('Suite'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'cabana',
+                            child: Text('Cabana'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'single',
+                            child: Text('Single'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'double',
+                            child: Text('Double'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'presidential',
+                            child: Text('Presidential'),
+                          ),
                         ],
-                        onChanged: (v) => setDialogState(() => roomType = v ?? 'deluxe'),
+                        onChanged: (v) =>
+                            setDialogState(() => roomType = v ?? 'deluxe'),
                         decoration: const InputDecoration(
-                          labelText: 'Room Type *', border: OutlineInputBorder(),
+                          labelText: 'Room Type *',
+                          border: OutlineInputBorder(),
                         ),
                       ),
                       const SizedBox(height: 16),
 
                       // CAPACITY
-                      const Text('Capacity', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                      const Text(
+                        'Capacity',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
                       const Divider(),
                       Row(
                         children: [
-                          Expanded(child: WebFormField(label: 'Max Guests *', controller: capacityController, keyboardType: TextInputType.number, validator: (v) => (v == null || v.isEmpty) ? 'Required' : null)),
+                          Expanded(
+                            child: WebFormField(
+                              label: 'Max Guests *',
+                              controller: capacityController,
+                              keyboardType: TextInputType.number,
+                              validator: (v) =>
+                                  (v == null || v.isEmpty) ? 'Required' : null,
+                            ),
+                          ),
                           const SizedBox(width: 12),
-                          Expanded(child: WebFormField(label: 'Max Adults', controller: adultsController, keyboardType: TextInputType.number)),
+                          Expanded(
+                            child: WebFormField(
+                              label: 'Max Adults',
+                              controller: adultsController,
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
-                      WebFormField(label: 'Max Children', controller: childrenController, keyboardType: TextInputType.number),
+                      WebFormField(
+                        label: 'Max Children',
+                        controller: childrenController,
+                        keyboardType: TextInputType.number,
+                      ),
 
                       // PRICING & FLOOR
-                      const Text('Pricing & Floor', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                      const Text(
+                        'Pricing & Floor',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
                       const Divider(),
                       Row(
                         children: [
-                          Expanded(child: WebFormField(label: 'Base Price Per Night *', controller: priceController, keyboardType: TextInputType.number, validator: (v) => (v == null || v.isEmpty) ? 'Required' : null)),
+                          Expanded(
+                            child: WebFormField(
+                              label: 'Base Price Per Night *',
+                              controller: priceController,
+                              keyboardType: TextInputType.number,
+                              validator: (v) =>
+                                  (v == null || v.isEmpty) ? 'Required' : null,
+                            ),
+                          ),
                           const SizedBox(width: 12),
-                          Expanded(child: WebFormField(label: 'Floor (leave empty to auto-calculate)', controller: floorController, keyboardType: TextInputType.number)),
+                          Expanded(
+                            child: WebFormField(
+                              label: 'Floor (leave empty to auto-calculate)',
+                              controller: floorController,
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
 
                       // AMENITIES
-                      const Text('Amenities', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                      const Text(
+                        'Amenities',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
                       const Divider(),
                       Wrap(
                         children: amenitiesList.map((a) {
@@ -1644,8 +1888,10 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                                 value: isSelected,
                                 onChanged: (bool? checked) {
                                   setDialogState(() {
-                                    if (checked == true) selectedAmenities.add(a);
-                                    else selectedAmenities.remove(a);
+                                    if (checked == true)
+                                      selectedAmenities.add(a);
+                                    else
+                                      selectedAmenities.remove(a);
                                   });
                                 },
                               ),
@@ -1658,7 +1904,11 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                       const SizedBox(height: 16),
 
                       // DESCRIPTION
-                      WebFormField(label: 'Room Description', controller: descController, maxLines: 2),
+                      WebFormField(
+                        label: 'Room Description',
+                        controller: descController,
+                        maxLines: 2,
+                      ),
                       const SizedBox(height: 16),
 
                       // GALLERY IMAGES
@@ -1670,11 +1920,24 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                             style: TextStyle(fontWeight: FontWeight.w600),
                           ),
                           TextButton.icon(
-                            onPressed: isUploading ? null : () => pickAndUploadImage(setDialogState),
+                            onPressed: isUploading
+                                ? null
+                                : () => pickAndUploadImage(setDialogState),
                             icon: isUploading
-                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Icon(Icons.cloud_upload_outlined, size: 18),
-                            label: Text(isUploading ? 'Uploading...' : 'Upload Image'),
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(
+                                    Icons.cloud_upload_outlined,
+                                    size: 18,
+                                  ),
+                            label: Text(
+                              isUploading ? 'Uploading...' : 'Upload Image',
+                            ),
                           ),
                         ],
                       ),
@@ -1684,7 +1947,8 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount: images.length,
-                            separatorBuilder: (_, _) => const SizedBox(width: 8),
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 8),
                             itemBuilder: (_, i) => Stack(
                               alignment: Alignment.topRight,
                               children: [
@@ -1698,11 +1962,19 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                                   ),
                                 ),
                                 GestureDetector(
-                                  onTap: () => setDialogState(() => images.removeAt(i)),
+                                  onTap: () =>
+                                      setDialogState(() => images.removeAt(i)),
                                   child: Container(
                                     margin: const EdgeInsets.all(2),
-                                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                    child: const Icon(Icons.close, size: 12, color: Colors.white),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 12,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -1720,12 +1992,19 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.info_outline, color: Color(0xFF1B5E20), size: 18),
+                            const Icon(
+                              Icons.info_outline,
+                              color: Color(0xFF1B5E20),
+                              size: 18,
+                            ),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 'All rooms will have identical settings. Room numbers auto-generated (R001, R002...), codes (RM-0001, RM-0002...).',
-                                style: const TextStyle(fontSize: 11, color: Color(0xFF1B5E20)),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF1B5E20),
+                                ),
                               ),
                             ),
                           ],
@@ -1739,7 +2018,8 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                         validator: (v) {
                           if (v == null || v.isEmpty) return 'Required';
                           final c = int.tryParse(v);
-                          if (c == null || c < 1 || c > 100) return 'Enter 1-100';
+                          if (c == null || c < 1 || c > 100)
+                            return 'Enter 1-100';
                           return null;
                         },
                       ),
@@ -1748,61 +2028,102 @@ class _WebRoomsScreenState extends ConsumerState<WebRoomsScreen> {
                 ),
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
                 ElevatedButton.icon(
                   icon: isLoading
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.playlist_add, size: 18),
                   label: Text(isLoading ? 'Creating...' : 'Create Rooms'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF059669),
                     foregroundColor: Colors.white,
                   ),
-                  onPressed: isLoading ? null : () async {
-                    final count = int.tryParse(countController.text) ?? 0;
-                    if (count < 1 || count > 100) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Enter a valid count (1-100)'), backgroundColor: Colors.orange),
-                      );
-                      return;
-                    }
-                    setDialogState(() => isLoading = true);
-                    try {
-                      final api = ref.read(apiClientProvider);
-                      await api.dio.post(
-                        '/properties/$selectedPropertyId/rooms/bulk',
-                        data: {
-                          'roomType': roomType,
-                          'basePrice': double.tryParse(priceController.text.trim()) ?? 0.0,
-                          'capacity': int.tryParse(capacityController.text.trim()) ?? 2,
-                          'adults': int.tryParse(adultsController.text.trim()) ?? 2,
-                          'children': int.tryParse(childrenController.text.trim()) ?? 0,
-                          'floor': floorController.text.trim().isEmpty
-                              ? null
-                              : int.tryParse(floorController.text.trim()),
-                          'amenities': selectedAmenities.toList(),
-                          'images': images,
-                          'description': descController.text.trim(),
-                          'count': count,
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                          final count = int.tryParse(countController.text) ?? 0;
+                          if (count < 1 || count > 100) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Enter a valid count (1-100)'),
+                                backgroundColor: Colors.orange,
+                              ),
+                            );
+                            return;
+                          }
+                          setDialogState(() => isLoading = true);
+                          try {
+                            final api = ref.read(apiClientProvider);
+                            await api.dio.post(
+                              '/properties/$selectedPropertyId/rooms/bulk',
+                              data: {
+                                'roomType': roomType,
+                                'basePrice':
+                                    double.tryParse(
+                                      priceController.text.trim(),
+                                    ) ??
+                                    0.0,
+                                'capacity':
+                                    int.tryParse(
+                                      capacityController.text.trim(),
+                                    ) ??
+                                    2,
+                                'adults':
+                                    int.tryParse(
+                                      adultsController.text.trim(),
+                                    ) ??
+                                    2,
+                                'children':
+                                    int.tryParse(
+                                      childrenController.text.trim(),
+                                    ) ??
+                                    0,
+                                'floor': floorController.text.trim().isEmpty
+                                    ? null
+                                    : int.tryParse(floorController.text.trim()),
+                                'amenities': selectedAmenities.toList(),
+                                'images': images,
+                                'description': descController.text.trim(),
+                                'count': count,
+                              },
+                            );
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            ref
+                                .read(roomProvider.notifier)
+                                .fetchRooms(selectedPropertyId!);
+                            _loadData();
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    '$count rooms created successfully',
+                                  ),
+                                  backgroundColor: const Color(0xFF2E7D32),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() => isLoading = false);
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Failed: $e'),
+                                  backgroundColor: Colors.red,
+                                ),
+                              );
+                            }
+                          }
                         },
-                      );
-                      if (ctx.mounted) Navigator.pop(ctx);
-                      ref.read(roomProvider.notifier).fetchRooms(selectedPropertyId!);
-                      _loadData();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('$count rooms created successfully'), backgroundColor: const Color(0xFF2E7D32)),
-                        );
-                      }
-                    } catch (e) {
-                      setDialogState(() => isLoading = false);
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red),
-                        );
-                      }
-                    }
-                  },
                 ),
               ],
             );

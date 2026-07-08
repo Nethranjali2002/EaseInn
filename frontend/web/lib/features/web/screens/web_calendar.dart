@@ -1,20 +1,3 @@
-/// Calendar Screen — bookings, tasks, maintenance, cleaning, occupancy views.
-///
-/// Provides a visual calendar interface for viewing hotel operations across time.
-/// Supports multiple view modes (Month, Week, Day, List, Occupancy) with event
-/// type filtering and property selection.
-///
-/// Key features:
-/// - Month/Week/Day calendar views using CalendarController from shared package
-/// - List view for flat chronological display of all events
-/// - Occupancy view showing room availability as a grid (rooms x dates)
-/// - Event type filters: bookings, tasks, maintenance, cleaning
-/// - Color-coded events: booking=blue, task=orange, maintenance=red, cleaning=green
-/// - Event detail dialog with action buttons (view booking, view task, etc.)
-/// - Property filter to focus on a single property or view all
-///
-/// Data sources: bookingProvider, taskProvider, roomProvider from shared package.
-/// Uses CalendarController for date navigation and event positioning.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,12 +14,11 @@ class WebCalendarScreen extends ConsumerStatefulWidget {
 
 class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
   DateTime _currentDate = DateTime.now();
-  String _selectedView = 'Month'; // Month, Week, Day, List, Occupancy
+  String _selectedView = 'Month';
   String _selectedPropertyId = 'All';
-  String _selectedEventType =
-      'All'; // All, Bookings, Tasks, Maintenance, Cleaning
+  String _selectedEventType = 'All';
   String _selectedStatus = 'All';
-  bool _isStaff = false; // Staff see only their tasks; admins/managers see all
+  bool _isStaff = false;
 
   // Raw event data fetched from APIs (bookings, tasks, rooms)
   List<Map<String, dynamic>> _rawBookings = [];
@@ -378,36 +360,56 @@ class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
                       onPressed: () {
                         setState(() {
                           if (_selectedView == 'Month') {
-                            _currentDate = DateTime(_currentDate.year, _currentDate.month - 1, 1);
+                            _currentDate = DateTime(
+                              _currentDate.year,
+                              _currentDate.month - 1,
+                              1,
+                            );
                           } else if (_selectedView == 'Week') {
-                            _currentDate = _currentDate.subtract(const Duration(days: 7));
+                            _currentDate = _currentDate.subtract(
+                              const Duration(days: 7),
+                            );
                           } else {
-                            _currentDate = _currentDate.subtract(const Duration(days: 1));
+                            _currentDate = _currentDate.subtract(
+                              const Duration(days: 1),
+                            );
                           }
                         });
                       },
                     ),
                     Text(
                       _getFormattedDateTitle(),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.chevron_right),
                       onPressed: () {
                         setState(() {
                           if (_selectedView == 'Month') {
-                            _currentDate = DateTime(_currentDate.year, _currentDate.month + 1, 1);
+                            _currentDate = DateTime(
+                              _currentDate.year,
+                              _currentDate.month + 1,
+                              1,
+                            );
                           } else if (_selectedView == 'Week') {
-                            _currentDate = _currentDate.add(const Duration(days: 7));
+                            _currentDate = _currentDate.add(
+                              const Duration(days: 7),
+                            );
                           } else {
-                            _currentDate = _currentDate.add(const Duration(days: 1));
+                            _currentDate = _currentDate.add(
+                              const Duration(days: 1),
+                            );
                           }
                         });
                       },
                     ),
                     const SizedBox(width: 8),
                     ElevatedButton(
-                      onPressed: () => setState(() => _currentDate = DateTime.now()),
+                      onPressed: () =>
+                          setState(() => _currentDate = DateTime.now()),
                       child: const Text('Today'),
                     ),
                   ],
@@ -523,7 +525,10 @@ class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
                             value: 'Bookings',
                             child: Text('Bookings'),
                           ),
-                          DropdownMenuItem(value: 'Tasks', child: Text('Tasks')),
+                          DropdownMenuItem(
+                            value: 'Tasks',
+                            child: Text('Tasks'),
+                          ),
                           DropdownMenuItem(
                             value: 'Maintenance',
                             child: Text('Maintenance'),
@@ -533,7 +538,8 @@ class _WebCalendarScreenState extends ConsumerState<WebCalendarScreen> {
                             child: Text('Cleaning'),
                           ),
                         ],
-                        onChanged: (v) => setState(() => _selectedEventType = v!),
+                        onChanged: (v) =>
+                            setState(() => _selectedEventType = v!),
                         decoration: const InputDecoration(
                           labelText: 'Event Type',
                           contentPadding: EdgeInsets.symmetric(

@@ -1,19 +1,3 @@
-/// Audit Log Screen — system activity log viewer, admin only.
-///
-/// Displays a chronological log of all system actions for compliance and
-/// debugging purposes. Shows who did what, when, and on which entity.
-///
-/// Key features:
-/// - Summary cards: total actions, users active, today's actions
-/// - Multi-criteria filters: search, module (users/properties/rooms/bookings/payments/tasks/feedback),
-///   action type, user, date range
-/// - Timeline view with action icons, user avatars, and relative timestamps
-/// - Entity linking: click to navigate to the affected entity (booking, user, room, etc.)
-/// - CSV export of filtered audit logs for compliance reporting
-/// - Auto-refresh toggle for real-time monitoring
-///
-/// Data fetched from /api/audit-log with query parameters for filtering.
-/// Admin-only access enforced at the UI level.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -686,8 +670,8 @@ class _WebAuditLogScreenState extends ConsumerState<WebAuditLogScreen> {
         final actionColor = action == 'CREATE' || action == 'CREATED'
             ? const Color(0xFF2E7D32)
             : action == 'DELETE' || action == 'DELETED'
-                ? Colors.red
-                : const Color(0xFF1565C0);
+            ? Colors.red
+            : const Color(0xFF1565C0);
 
         return AlertDialog(
           title: Row(
@@ -697,10 +681,16 @@ class _WebAuditLogScreenState extends ConsumerState<WebAuditLogScreen> {
               Expanded(
                 child: Text(
                   'Audit Log Details',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
               ),
-              Text(logDisplayId, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+              Text(
+                logDisplayId,
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+              ),
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.close),
@@ -717,7 +707,10 @@ class _WebAuditLogScreenState extends ConsumerState<WebAuditLogScreen> {
                   // Status Banner
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: actionColor.withOpacity(0.08),
                       borderRadius: BorderRadius.circular(8),
@@ -726,24 +719,52 @@ class _WebAuditLogScreenState extends ConsumerState<WebAuditLogScreen> {
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: actionColor,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             action,
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Text(log['entity'] ?? 'General', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(
+                          log['entity'] ?? 'General',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
                         const SizedBox(width: 8),
-                        Text('•', style: TextStyle(color: Colors.grey.shade400)),
+                        Text(
+                          '•',
+                          style: TextStyle(color: Colors.grey.shade400),
+                        ),
                         const SizedBox(width: 8),
-                        Text(timeStr, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                        Text(
+                          timeStr,
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 13,
+                          ),
+                        ),
                         const Spacer(),
-                        Text(log['user']?['name'] ?? 'System', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                        Text(
+                          log['user']?['name'] ?? 'System',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -762,8 +783,14 @@ class _WebAuditLogScreenState extends ConsumerState<WebAuditLogScreen> {
                   _buildDetailsHeader('Performed By User'),
                   _detailsRow('User Name', log['user']?['name'] ?? 'System'),
                   _detailsRow('Email Address', log['user']?['email'] ?? '-'),
-                  _detailsRow('User Role', (log['user']?['role'] ?? 'system').toUpperCase()),
-                  _detailsRow('Assigned Property', log['property']?['name'] ?? 'All Properties'),
+                  _detailsRow(
+                    'User Role',
+                    (log['user']?['role'] ?? 'system').toUpperCase(),
+                  ),
+                  _detailsRow(
+                    'Assigned Property',
+                    log['property']?['name'] ?? 'All Properties',
+                  ),
                   const SizedBox(height: 16),
 
                   // Changes Diff Grid

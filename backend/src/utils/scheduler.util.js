@@ -3,17 +3,10 @@ import Room from '../models/room.model.js';
 import { sendCheckInReminderSMS, sendPaymentReminderSMS } from './sms.util.js';
 import logger from './logger.util.js';
 
-// Time definitions in milliseconds
 const ONE_HOUR = 60 * 60 * 1000;
 const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
 
-// ==========================================
-// 1. START SCHEDULER (The Heartbeat)
-// This function is triggered once when the server boots up (in server.js).
-// It acts as a never-ending clock, waking up every hour to see if automated tasks need to be run.
-// ==========================================
 export const startScheduler = () => {
-  // `setInterval` executes the code block repeatedly at the specified interval
   setInterval(async () => {
     try {
       await sendCheckInReminders();
@@ -27,10 +20,6 @@ export const startScheduler = () => {
 };
 
 
-// ==========================================
-// 2. SEND CHECK IN REMINDERS
-// Looks for guests arriving exactly tomorrow and sends them a text message.
-// ==========================================
 const sendCheckInReminders = async () => {
   // Calculate the time window for "tomorrow"
   const tomorrow = new Date();
@@ -62,10 +51,6 @@ const sendCheckInReminders = async () => {
 };
 
 
-// ==========================================
-// 3. SEND PAYMENT REMINDERS
-// Hunts down guests who still owe money and are arriving in the next 3 days.
-// ==========================================
 const sendPaymentReminders = async () => {
   // Find bookings that haven't paid fully AND are checking in within 72 hours
   const pendingPayments = await Booking.find({

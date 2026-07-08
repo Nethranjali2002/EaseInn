@@ -2,22 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared/shared.dart';
 
-/// Public Guest Review Screen — no authentication required.
-///
-/// Allows guests to submit a review for their completed stay using a unique
-/// review token sent via email. The token validates the review link and
-/// associates the review with the correct booking.
-///
-/// Flow:
-/// 1. Guest clicks review link from email → loads this screen with token
-/// 2. Token is validated against /api/reviews/public/validate
-/// 3. Guest sees booking info (property, dates, room) and fills out the form
-/// 4. Form includes: rating (1-5 stars), title, comment, pros, cons, would recommend
-/// 5. On submit, review is posted to /api/reviews/public with the token
-/// 6. Success state shows confirmation with option to submit another review
-///
-/// State management uses local setState — no Riverpod providers needed since
-/// this is a single-purpose public page with no shared state.
 class PublicReviewScreen extends ConsumerStatefulWidget {
   final String token;
   const PublicReviewScreen({super.key, required this.token});
@@ -27,10 +11,9 @@ class PublicReviewScreen extends ConsumerStatefulWidget {
 }
 
 class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
-  // UI state flags
-  bool _isValidating = true; // Token validation in progress
-  bool _isSubmitting = false; // Review submission in progress
-  bool _isSubmitted = false; // Successfully submitted
+  bool _isValidating = true;
+  bool _isSubmitting = false;
+  bool _isSubmitted = false;
   String? _errorMessage;
 
   // Booking info populated after token validation
@@ -65,26 +48,32 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     super.dispose();
   }
 
-  /// Validates the review token against the API to ensure it's still usable.
-  /// On success, populates booking info. On failure, shows error message.
   Future<void> _validateToken() async {
     try {
       final api = ref.read(apiClientProvider);
-      final res = await api.get('/review/validate', queryParameters: {'token': widget.token});
+      final res = await api.get(
+        '/review/validate',
+        queryParameters: {'token': widget.token},
+      );
       final data = res.data['data'];
       setState(() {
         _guestName = data['guestName'] ?? '';
         _propertyName = data['propertyName'] ?? '';
         _roomNumber = data['roomNumber'] ?? '';
         _roomType = data['roomType'] ?? '';
-        _checkIn = data['checkIn'] != null ? DateTime.tryParse(data['checkIn']) : null;
-        _checkOut = data['checkOut'] != null ? DateTime.tryParse(data['checkOut']) : null;
+        _checkIn = data['checkIn'] != null
+            ? DateTime.tryParse(data['checkIn'])
+            : null;
+        _checkOut = data['checkOut'] != null
+            ? DateTime.tryParse(data['checkOut'])
+            : null;
         _isValidating = false;
       });
     } catch (e) {
       setState(() {
         _isValidating = false;
-        _errorMessage = 'This review link is invalid, has expired, or has already been used.';
+        _errorMessage =
+            'This review link is invalid, has expired, or has already been used.';
       });
     }
   }
@@ -92,7 +81,10 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
   Future<void> _submitReview() async {
     if (_overallRating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select an overall rating'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Please select an overall rating'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
@@ -100,20 +92,23 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     setState(() => _isSubmitting = true);
     try {
       final api = ref.read(apiClientProvider);
-      await api.post('/review/submit', data: {
-        'token': widget.token,
-        'rating': _overallRating,
-        'title': _titleController.text.trim(),
-        'comment': _commentController.text.trim(),
-        'categories': {
-          if (_cleanlinessRating > 0) 'cleanliness': _cleanlinessRating,
-          if (_comfortRating > 0) 'comfort': _comfortRating,
-          if (_locationRating > 0) 'location': _locationRating,
-          if (_serviceRating > 0) 'service': _serviceRating,
-          if (_valueRating > 0) 'value': _valueRating,
+      await api.post(
+        '/review/submit',
+        data: {
+          'token': widget.token,
+          'rating': _overallRating,
+          'title': _titleController.text.trim(),
+          'comment': _commentController.text.trim(),
+          'categories': {
+            if (_cleanlinessRating > 0) 'cleanliness': _cleanlinessRating,
+            if (_comfortRating > 0) 'comfort': _comfortRating,
+            if (_locationRating > 0) 'location': _locationRating,
+            if (_serviceRating > 0) 'service': _serviceRating,
+            if (_valueRating > 0) 'value': _valueRating,
+          },
+          'recommendation': _recommendation,
         },
-        'recommendation': _recommendation,
-      });
+      );
       setState(() {
         _isSubmitting = false;
         _isSubmitted = true;
@@ -122,7 +117,10 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
       setState(() => _isSubmitting = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: ${e.toString()}'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -175,8 +173,18 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
         children: [
           const Icon(Icons.hotel, color: Colors.white, size: 40),
           const SizedBox(height: 8),
-          const Text('EaseInn', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold)),
-          const Text('Guest Review Portal', style: TextStyle(color: Colors.white70, fontSize: 14)),
+          const Text(
+            'EaseInn',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const Text(
+            'Guest Review Portal',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
+          ),
         ],
       ),
     );
@@ -190,7 +198,10 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
           children: [
             CircularProgressIndicator(color: Color(0xFF1B5E20)),
             SizedBox(height: 16),
-            Text('Validating your review link...', style: TextStyle(color: Colors.grey)),
+            Text(
+              'Validating your review link...',
+              style: TextStyle(color: Colors.grey),
+            ),
           ],
         ),
       ),
@@ -205,7 +216,10 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
           children: [
             const Icon(Icons.link_off, size: 64, color: Colors.red),
             const SizedBox(height: 16),
-            const Text('Invalid Review Link', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text(
+              'Invalid Review Link',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             Text(
               _errorMessage!,
@@ -233,12 +247,23 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
               child: const Icon(Icons.check, color: Colors.white, size: 48),
             ),
             const SizedBox(height: 24),
-            const Text('Thank You!', style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20))),
+            const Text(
+              'Thank You!',
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1B5E20),
+              ),
+            ),
             const SizedBox(height: 12),
             Text(
               'Your review for $_propertyName has been submitted successfully. We truly appreciate your feedback!',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 15, height: 1.5),
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 15,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 8),
             const Text('⭐⭐⭐⭐⭐', style: TextStyle(fontSize: 28)),
@@ -261,7 +286,9 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF1B5E20).withOpacity(0.06),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFF1B5E20).withOpacity(0.2)),
+                border: Border.all(
+                  color: const Color(0xFF1B5E20).withOpacity(0.2),
+                ),
               ),
               child: Row(
                 children: [
@@ -271,13 +298,27 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Hi, $_guestName!', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                        Text('$_propertyName • Room $_roomNumber${_roomType.isNotEmpty ? ' ($_roomType)' : ''}',
-                            style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                        Text(
+                          'Hi, $_guestName!',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        Text(
+                          '$_propertyName • Room $_roomNumber${_roomType.isNotEmpty ? ' ($_roomType)' : ''}',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
+                        ),
                         if (_checkIn != null && _checkOut != null)
                           Text(
                             '${_formatDate(_checkIn!)} – ${_formatDate(_checkOut!)}',
-                            style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
+                            style: TextStyle(
+                              color: Colors.grey.shade500,
+                              fontSize: 12,
+                            ),
                           ),
                       ],
                     ),
@@ -288,9 +329,15 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
             const SizedBox(height: 28),
 
             // Overall rating
-            const Text('Overall Rating *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'Overall Rating *',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 4),
-            const Text('How was your overall experience?', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            const Text(
+              'How was your overall experience?',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
             const SizedBox(height: 12),
             _buildStarRow(
               rating: _overallRating,
@@ -300,19 +347,48 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
             const SizedBox(height: 28),
 
             // Category ratings
-            const Text('Rate by Category', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'Rate by Category',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 4),
-            const Text('Optional — help us understand the details.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+            const Text(
+              'Optional — help us understand the details.',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
             const SizedBox(height: 16),
-            _buildCategoryRow('🧹 Cleanliness', _cleanlinessRating, (r) => setState(() => _cleanlinessRating = r)),
-            _buildCategoryRow('🛏 Comfort', _comfortRating, (r) => setState(() => _comfortRating = r)),
-            _buildCategoryRow('📍 Location', _locationRating, (r) => setState(() => _locationRating = r)),
-            _buildCategoryRow('🤝 Service', _serviceRating, (r) => setState(() => _serviceRating = r)),
-            _buildCategoryRow('💰 Value for Money', _valueRating, (r) => setState(() => _valueRating = r)),
+            _buildCategoryRow(
+              '🧹 Cleanliness',
+              _cleanlinessRating,
+              (r) => setState(() => _cleanlinessRating = r),
+            ),
+            _buildCategoryRow(
+              '🛏 Comfort',
+              _comfortRating,
+              (r) => setState(() => _comfortRating = r),
+            ),
+            _buildCategoryRow(
+              '📍 Location',
+              _locationRating,
+              (r) => setState(() => _locationRating = r),
+            ),
+            _buildCategoryRow(
+              '🤝 Service',
+              _serviceRating,
+              (r) => setState(() => _serviceRating = r),
+            ),
+            _buildCategoryRow(
+              '💰 Value for Money',
+              _valueRating,
+              (r) => setState(() => _valueRating = r),
+            ),
             const SizedBox(height: 24),
 
             // Review title
-            const Text('Review Title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'Review Title',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 8),
             TextFormField(
               controller: _titleController,
@@ -326,14 +402,18 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
             const SizedBox(height: 20),
 
             // Comment
-            const Text('Your Review', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'Your Review',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 8),
             TextFormField(
               controller: _commentController,
               maxLines: 5,
               maxLength: 2000,
               decoration: const InputDecoration(
-                hintText: 'Tell us about your stay — what did you love? What could be improved?',
+                hintText:
+                    'Tell us about your stay — what did you love? What could be improved?',
                 border: OutlineInputBorder(),
                 alignLabelWithHint: true,
               ),
@@ -341,7 +421,10 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
             const SizedBox(height: 28),
 
             // Recommendation
-            const Text('Would you recommend this property?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'Would you recommend this property?',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -350,8 +433,15 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                     icon: const Icon(Icons.thumb_up, color: Colors.green),
                     label: const Text('Yes, I recommend'),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: _recommendation == 'Yes' ? Colors.green : Colors.grey.shade300, width: _recommendation == 'Yes' ? 2 : 1),
-                      backgroundColor: _recommendation == 'Yes' ? Colors.green.withOpacity(0.05) : null,
+                      side: BorderSide(
+                        color: _recommendation == 'Yes'
+                            ? Colors.green
+                            : Colors.grey.shade300,
+                        width: _recommendation == 'Yes' ? 2 : 1,
+                      ),
+                      backgroundColor: _recommendation == 'Yes'
+                          ? Colors.green.withOpacity(0.05)
+                          : null,
                     ),
                     onPressed: () => setState(() => _recommendation = 'Yes'),
                   ),
@@ -362,8 +452,15 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                     icon: const Icon(Icons.thumb_down, color: Colors.red),
                     label: const Text('No, I do not recommend'),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: _recommendation == 'No' ? Colors.red : Colors.grey.shade300, width: _recommendation == 'No' ? 2 : 1),
-                      backgroundColor: _recommendation == 'No' ? Colors.red.withOpacity(0.05) : null,
+                      side: BorderSide(
+                        color: _recommendation == 'No'
+                            ? Colors.red
+                            : Colors.grey.shade300,
+                        width: _recommendation == 'No' ? 2 : 1,
+                      ),
+                      backgroundColor: _recommendation == 'No'
+                          ? Colors.red.withOpacity(0.05)
+                          : null,
                     ),
                     onPressed: () => setState(() => _recommendation = 'No'),
                   ),
@@ -381,15 +478,26 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1B5E20),
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: _isSubmitting
                     ? const SizedBox(
                         height: 22,
                         width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
-                    : const Text('Submit My Review', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    : const Text(
+                        'Submit My Review',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 8),
@@ -420,7 +528,11 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
     );
   }
 
-  Widget _buildStarRow({required int rating, required double size, required ValueChanged<int> onTap}) {
+  Widget _buildStarRow({
+    required int rating,
+    required double size,
+    required ValueChanged<int> onTap,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: List.generate(5, (i) {
@@ -431,7 +543,9 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 2),
             child: Icon(
               starIndex <= rating ? Icons.star : Icons.star_border,
-              color: starIndex <= rating ? const Color(0xFFFFC107) : Colors.grey.shade400,
+              color: starIndex <= rating
+                  ? const Color(0xFFFFC107)
+                  : Colors.grey.shade400,
               size: size,
             ),
           ),
@@ -459,7 +573,20 @@ class _PublicReviewScreenState extends ConsumerState<PublicReviewScreen> {
   }
 
   String _formatDate(DateTime date) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 }

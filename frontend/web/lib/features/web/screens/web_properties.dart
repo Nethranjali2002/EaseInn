@@ -1,22 +1,5 @@
-/// Property Management Screen — CRUD, search, filters, bulk room creation, image upload.
-///
-/// This is the central hub for managing hotel/resort properties in the EaseInn PMS.
-/// Admins and managers can view all properties in a table, apply multi-criteria
-/// filters (search, status, district, province), and perform full CRUD operations.
-///
-/// Key features:
-/// - Summary dashboard cards showing total properties, active count, total rooms,
-///   and average occupancy rate
-/// - Responsive filter bar that adapts layout for desktop vs tablet
-/// - Property detail dialog with sections for basic info, location, contact,
-///   operations, statistics, room types, gallery, and recent bookings
-/// - Property create/edit form with image upload for logo, cover, and gallery
-///   (uses dart:html FileUploadInputElement for web-only file picking)
-/// - Two-step delete confirmation dialog to prevent accidental deletions
-///
-/// State management uses Riverpod (propertyProvider) to handle async data fetching,
-/// caching, and mutations. Local filtering is applied client-side for instant
-/// feedback without re-fetching from the API.
+// Summary: Manage properties — listing, filtering, create/edit property details and image uploads.
+
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -578,7 +561,10 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
                 Expanded(
                   child: Text(
                     p.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -592,144 +578,377 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
               height: MediaQuery.of(context).size.height * 0.75,
               child: SingleChildScrollView(
                 child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Status Banner
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: (p.isActive ? const Color(0xFF10B981) : Colors.red).withOpacity(0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: (p.isActive ? const Color(0xFF10B981) : Colors.red).withOpacity(0.2)),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: p.isActive ? const Color(0xFF10B981) : Colors.red,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            p.isActive ? 'ACTIVE' : 'INACTIVE',
-                            style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                          ),
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Status Banner
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            (p.isActive ? const Color(0xFF10B981) : Colors.red)
+                                .withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color:
+                              (p.isActive
+                                      ? const Color(0xFF10B981)
+                                      : Colors.red)
+                                  .withOpacity(0.2),
                         ),
-                        const SizedBox(width: 12),
-                        Text(p.code.isNotEmpty ? p.code : '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        const SizedBox(width: 8),
-                        Text('•', style: TextStyle(color: Colors.grey.shade400)),
-                        const SizedBox(width: 8),
-                        Text(p.propertyType, style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
-                        const Spacer(),
-                        Text('Occupancy: ${p.occupancyRate.toStringAsFixed(0)}%', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: p.isActive
+                                  ? const Color(0xFF10B981)
+                                  : Colors.red,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              p.isActive ? 'ACTIVE' : 'INACTIVE',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            p.code.isNotEmpty ? p.code : '',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '•',
+                            style: TextStyle(color: Colors.grey.shade400),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            p.propertyType,
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            'Occupancy: ${p.occupancyRate.toStringAsFixed(0)}%',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (p.coverImage.isNotEmpty)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          resolveImageUrl(p.coverImage),
+                          height: 160,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    const SizedBox(height: 16),
+                    // Detail blocks
+                    Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        _detailBlock(
+                          'Property Details',
+                          Icons.home_work,
+                          const Color(0xFF6A1B9A),
+                          [
+                            _detailRow('Type', p.propertyType),
+                            _detailRow(
+                              'Description',
+                              p.description.isNotEmpty ? p.description : '-',
+                            ),
+                            _detailRow(
+                              'Address',
+                              '${p.address['street'] ?? ''} ${p.address['city'] ?? ''}'
+                                      .trim()
+                                      .isNotEmpty
+                                  ? '${p.address['street'] ?? ''}, ${p.address['city'] ?? ''}'
+                                  : '-',
+                            ),
+                            _detailRow(
+                              'District',
+                              p.address['district']?.toString() ??
+                                  p.address['state']?.toString() ??
+                                  '-',
+                            ),
+                            _detailRow(
+                              'Province',
+                              p.address['province']?.toString() ?? '-',
+                            ),
+                          ],
+                        ),
+                        _detailBlock(
+                          'Contact & Access',
+                          Icons.contact_phone,
+                          const Color(0xFF1565C0),
+                          [
+                            _detailRow(
+                              'Phone',
+                              p.contact['phone']?.toString() ?? '-',
+                            ),
+                            _detailRow(
+                              'Email',
+                              p.contact['email']?.toString() ?? '-',
+                            ),
+                            _detailRow(
+                              'Website',
+                              p.website.isNotEmpty ? p.website : '-',
+                            ),
+                            _detailRow('Check-In Time', p.checkInTime),
+                            _detailRow('Check-Out Time', p.checkOutTime),
+                          ],
+                        ),
+                        _detailBlock(
+                          'Statistics',
+                          Icons.analytics,
+                          const Color(0xFF00695C),
+                          [
+                            _detailRow('Total Rooms', '${p.totalRooms}'),
+                            _detailRow(
+                              'Available Rooms',
+                              '${p.availableRooms}',
+                            ),
+                            _detailRow(
+                              'Occupied Rooms',
+                              '${p.totalRooms - p.availableRooms}',
+                            ),
+                            _detailHighlightRow(
+                              'Occupancy Rate',
+                              '${p.occupancyRate.toStringAsFixed(1)}%',
+                              const Color(0xFF00695C),
+                            ),
+                          ],
+                        ),
+                        _detailBlock(
+                          'Room Types',
+                          Icons.category,
+                          const Color(0xFFE65100),
+                          [
+                            FutureBuilder<Response>(
+                              future: ref
+                                  .read(apiClientProvider)
+                                  .get('/properties/${p.id}/rooms'),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData)
+                                  return const Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                final roomList =
+                                    (snapshot.data!.data['data']['rooms']
+                                            as List)
+                                        .map(
+                                          (r) =>
+                                              r['roomType']
+                                                  ?.toString()
+                                                  .toUpperCase() ??
+                                              '',
+                                        )
+                                        .toList();
+                                final typeCounts = <String, int>{};
+                                for (final type in roomList) {
+                                  typeCounts[type] =
+                                      (typeCounts[type] ?? 0) + 1;
+                                }
+                                if (typeCounts.isEmpty)
+                                  return const Text(
+                                    'No rooms added yet.',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  );
+                                return Column(
+                                  children: typeCounts.entries
+                                      .map(
+                                        (e) => _detailRow(
+                                          e.key,
+                                          '${e.value} rooms',
+                                        ),
+                                      )
+                                      .toList(),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                        if (p.images.isNotEmpty)
+                          _detailBlock(
+                            'Gallery',
+                            Icons.photo_library,
+                            const Color(0xFF4527A0),
+                            [
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: p.images
+                                    .map(
+                                      (img) => ClipRRect(
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Image.network(
+                                          resolveImageUrl(img),
+                                          width: 80,
+                                          height: 80,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) => Container(
+                                            width: 80,
+                                            height: 80,
+                                            color: Colors.grey.shade200,
+                                            child: const Icon(
+                                              Icons.broken_image,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                            ],
+                          ),
+                        _detailBlock(
+                          'Recent Bookings',
+                          Icons.event_available,
+                          const Color(0xFF2E7D32),
+                          [
+                            FutureBuilder<Response>(
+                              future: ref
+                                  .read(apiClientProvider)
+                                  .get('/properties/${p.id}/bookings'),
+                              builder: (context, snapshot) {
+                                if (!snapshot.hasData)
+                                  return const Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  );
+                                final bookings =
+                                    snapshot.data!.data['data']['bookings']
+                                        as List;
+                                if (bookings.isEmpty)
+                                  return const Text(
+                                    'No bookings found.',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 12,
+                                    ),
+                                  );
+                                return Column(
+                                  children: bookings.take(4).map((b) {
+                                    final checkIn =
+                                        b['checkInDate']?.toString().substring(
+                                          0,
+                                          10,
+                                        ) ??
+                                        '';
+                                    final status =
+                                        b['status']?.toString().toUpperCase() ??
+                                        '';
+                                    return Container(
+                                      margin: const EdgeInsets.only(bottom: 6),
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade50,
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: Colors.grey.shade200,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                b['guestName'] ?? 'Guest',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                  fontSize: 12,
+                                                ),
+                                              ),
+                                              Text(
+                                                'Check-in: $checkIn',
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  color: Colors.grey.shade600,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: status == 'CONFIRMED'
+                                                  ? Colors.green.shade50
+                                                  : Colors.blue.shade50,
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              status,
+                                              style: TextStyle(
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.bold,
+                                                color: status == 'CONFIRMED'
+                                                    ? Colors.green.shade700
+                                                    : Colors.blue.shade700,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (p.coverImage.isNotEmpty)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(resolveImageUrl(p.coverImage), height: 160, width: double.infinity, fit: BoxFit.cover),
-                    ),
-                  const SizedBox(height: 16),
-                  // Detail blocks
-                  Wrap(
-                    spacing: 16,
-                    runSpacing: 16,
-                    children: [
-                      _detailBlock('Property Details', Icons.home_work, const Color(0xFF6A1B9A), [
-                        _detailRow('Type', p.propertyType),
-                        _detailRow('Description', p.description.isNotEmpty ? p.description : '-'),
-                        _detailRow('Address', '${p.address['street'] ?? ''} ${p.address['city'] ?? ''}'.trim().isNotEmpty ? '${p.address['street'] ?? ''}, ${p.address['city'] ?? ''}' : '-'),
-                        _detailRow('District', p.address['district']?.toString() ?? p.address['state']?.toString() ?? '-'),
-                        _detailRow('Province', p.address['province']?.toString() ?? '-'),
-                      ]),
-                      _detailBlock('Contact & Access', Icons.contact_phone, const Color(0xFF1565C0), [
-                        _detailRow('Phone', p.contact['phone']?.toString() ?? '-'),
-                        _detailRow('Email', p.contact['email']?.toString() ?? '-'),
-                        _detailRow('Website', p.website.isNotEmpty ? p.website : '-'),
-                        _detailRow('Check-In Time', p.checkInTime),
-                        _detailRow('Check-Out Time', p.checkOutTime),
-                      ]),
-                      _detailBlock('Statistics', Icons.analytics, const Color(0xFF00695C), [
-                        _detailRow('Total Rooms', '${p.totalRooms}'),
-                        _detailRow('Available Rooms', '${p.availableRooms}'),
-                        _detailRow('Occupied Rooms', '${p.totalRooms - p.availableRooms}'),
-                        _detailHighlightRow('Occupancy Rate', '${p.occupancyRate.toStringAsFixed(1)}%', const Color(0xFF00695C)),
-                      ]),
-                      _detailBlock('Room Types', Icons.category, const Color(0xFFE65100), [
-                        FutureBuilder<Response>(
-                          future: ref.read(apiClientProvider).get('/properties/${p.id}/rooms'),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(8), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)));
-                            final roomList = (snapshot.data!.data['data']['rooms'] as List).map((r) => r['roomType']?.toString().toUpperCase() ?? '').toList();
-                            final typeCounts = <String, int>{};
-                            for (final type in roomList) { typeCounts[type] = (typeCounts[type] ?? 0) + 1; }
-                            if (typeCounts.isEmpty) return const Text('No rooms added yet.', style: TextStyle(color: Colors.grey, fontSize: 12));
-                            return Column(children: typeCounts.entries.map((e) => _detailRow(e.key, '${e.value} rooms')).toList());
-                          },
-                        ),
-                      ]),
-                      if (p.images.isNotEmpty)
-                        _detailBlock('Gallery', Icons.photo_library, const Color(0xFF4527A0), [
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: p.images.map((img) => ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: Image.network(resolveImageUrl(img), width: 80, height: 80, fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Container(width: 80, height: 80, color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
-                              ),
-                            )).toList(),
-                          ),
-                        ]),
-                      _detailBlock('Recent Bookings', Icons.event_available, const Color(0xFF2E7D32), [
-                        FutureBuilder<Response>(
-                          future: ref.read(apiClientProvider).get('/properties/${p.id}/bookings'),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) return const Padding(padding: EdgeInsets.all(8), child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)));
-                            final bookings = snapshot.data!.data['data']['bookings'] as List;
-                            if (bookings.isEmpty) return const Text('No bookings found.', style: TextStyle(color: Colors.grey, fontSize: 12));
-                            return Column(children: bookings.take(4).map((b) {
-                              final checkIn = b['checkInDate']?.toString().substring(0, 10) ?? '';
-                              final status = b['status']?.toString().toUpperCase() ?? '';
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 6),
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade50,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: Colors.grey.shade200),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                      Text(b['guestName'] ?? 'Guest', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                                      Text('Check-in: $checkIn', style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
-                                    ]),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: status == 'CONFIRMED' ? Colors.green.shade50 : Colors.blue.shade50,
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(status, style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: status == 'CONFIRMED' ? Colors.green.shade700 : Colors.blue.shade700)),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList());
-                          },
-                        ),
-                      ]),
-                    ],
-                  ),
-                ],
-              ),
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -775,14 +994,22 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: Colors.grey.shade700, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey.shade700,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
             ),
           ),
         ],
@@ -790,7 +1017,12 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
     );
   }
 
-  Widget _detailBlock(String title, IconData icon, Color color, List<Widget> children) {
+  Widget _detailBlock(
+    String title,
+    IconData icon,
+    Color color,
+    List<Widget> children,
+  ) {
     return SizedBox(
       width: 420,
       child: Card(
@@ -908,7 +1140,7 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
       input.onChange.listen((_) async {
         if (input.files == null || input.files!.isEmpty) return;
         final files = input.files!;
-        
+
         setDialogState(() {
           if (type == 'logo') isUploadingLogo = true;
           if (type == 'cover') isUploadingCover = true;
@@ -934,7 +1166,10 @@ class _WebPropertiesScreenState extends ConsumerState<WebPropertiesScreen> {
             final formData = FormData.fromMap({
               'file': MultipartFile.fromBytes(bytes, filename: file.name),
             });
-            final response = await api.dio.post('/upload/single', data: formData);
+            final response = await api.dio.post(
+              '/upload/single',
+              data: formData,
+            );
             final rawUrl = response.data['data']['url'] as String;
             final fullUrl = resolveImageUrl(rawUrl);
             setDialogState(() {

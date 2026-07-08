@@ -1,24 +1,9 @@
-/// Notification Screen — list, mark read, type icons.
-///
-/// Displays all notifications for the current user in a scrollable list with
-/// type-based filtering and mark-as-read functionality.
-///
-/// Key features:
-/// - Filter by notification type: all, bookings, tasks, payments, system
-/// - Type-specific icons with color coding (booking=blue, task=orange, payment=green, system=gray)
-/// - Tap to mark as read and navigate to related entity (booking, task, profile)
-/// - Relative time display (e.g., "2 hours ago", "yesterday")
-/// - Empty state with illustration when no notifications match the filter
-///
-/// Uses notificationProvider from shared package for data and mutations.
-/// Navigation uses go_router to deep-link to related screens.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:shared/shared.dart';
 
-/// Notifications screen showing all user notifications with filtering.
 class WebNotificationsScreen extends ConsumerStatefulWidget {
   const WebNotificationsScreen({super.key});
 
@@ -29,7 +14,6 @@ class WebNotificationsScreen extends ConsumerStatefulWidget {
 
 class _WebNotificationsScreenState
     extends ConsumerState<WebNotificationsScreen> {
-  /// Current notification type filter (All, Bookings, Rooms, Tasks, Users, Feedback)
   String _selectedFilter = 'All';
 
   @override
@@ -46,15 +30,25 @@ class _WebNotificationsScreenState
       final title = n.title.toLowerCase();
       switch (_selectedFilter) {
         case 'Bookings':
-          return type.contains('booking') || msg.contains('bk-') || title.contains('booking');
+          return type.contains('booking') ||
+              msg.contains('bk-') ||
+              title.contains('booking');
         case 'Rooms':
-          return type.contains('room') || msg.contains('room') || title.contains('room');
+          return type.contains('room') ||
+              msg.contains('room') ||
+              title.contains('room');
         case 'Tasks':
-          return type.contains('task') || msg.contains('task') || title.contains('task');
+          return type.contains('task') ||
+              msg.contains('task') ||
+              title.contains('task');
         case 'Users':
-          return type.contains('user') || title.contains('user') || type.contains('profile');
+          return type.contains('user') ||
+              title.contains('user') ||
+              type.contains('profile');
         case 'Feedback':
-          return type.contains('feedback') || msg.contains('review') || title.contains('feedback');
+          return type.contains('feedback') ||
+              msg.contains('review') ||
+              title.contains('feedback');
         default:
           return true;
       }
@@ -70,24 +64,52 @@ class _WebNotificationsScreenState
             children: [
               Row(
                 children: [
-                  const Text('Real-Time Alert Center', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                  const Text(
+                    'Real-Time Alert Center',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
                   if (unreadCount > 0) ...[
                     const SizedBox(width: 12),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(16)),
-                      child: Text('$unreadCount Unread', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        '$unreadCount Unread',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ],
               ),
               Row(
                 children: [
-                  IconButton(icon: const Icon(Icons.refresh), tooltip: 'Refresh Notifications', onPressed: () => ref.read(notificationProvider.notifier).loadNotifications()),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    tooltip: 'Refresh Notifications',
+                    onPressed: () => ref
+                        .read(notificationProvider.notifier)
+                        .loadNotifications(),
+                  ),
                   const SizedBox(width: 8),
                   if (unreadCount > 0)
                     ElevatedButton.icon(
-                      onPressed: () => ref.read(notificationProvider.notifier).markAllAsRead(),
+                      onPressed: () => ref
+                          .read(notificationProvider.notifier)
+                          .markAllAsRead(),
                       icon: const Icon(Icons.done_all, size: 16),
                       label: const Text('Mark All as Read'),
                     ),
@@ -99,93 +121,220 @@ class _WebNotificationsScreenState
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: ['All', 'Bookings', 'Rooms', 'Tasks', 'Users', 'Feedback'].map((filter) {
-                final isSelected = _selectedFilter == filter;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(filter),
-                    selected: isSelected,
-                    onSelected: (selected) { if (selected) setState(() => _selectedFilter = filter); },
-                    selectedColor: const Color(0xFF1B5E20).withOpacity(0.15),
-                    labelStyle: TextStyle(color: isSelected ? const Color(0xFF1B5E20) : Colors.black87, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
-                  ),
-                );
-              }).toList(),
+              children:
+                  [
+                    'All',
+                    'Bookings',
+                    'Rooms',
+                    'Tasks',
+                    'Users',
+                    'Feedback',
+                  ].map((filter) {
+                    final isSelected = _selectedFilter == filter;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(filter),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected)
+                            setState(() => _selectedFilter = filter);
+                        },
+                        selectedColor: const Color(
+                          0xFF1B5E20,
+                        ).withOpacity(0.15),
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? const Color(0xFF1B5E20)
+                              : Colors.black87,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
           const SizedBox(height: 16),
           Expanded(
             child: Card(
               elevation: 0,
-              shape: RoundedRectangleBorder(side: BorderSide(color: Colors.grey.shade200), borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                side: BorderSide(color: Colors.grey.shade200),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: isLoading && filtered.isEmpty
                   ? const Center(child: CircularProgressIndicator())
                   : filtered.isEmpty
-                      ? const Center(child: Text('No matching notifications found.'))
-                      : ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                return SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: ConstrainedBox(
-                                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                                    child: DataTable(
-                                      showCheckboxColumn: false,
-                                      headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
-                                      columns: const [
-                                        DataColumn(label: Text('Time', style: TextStyle(fontWeight: FontWeight.bold))),
-                                        DataColumn(label: Text('Type', style: TextStyle(fontWeight: FontWeight.bold))),
-                                        DataColumn(label: Text('Message', style: TextStyle(fontWeight: FontWeight.bold))),
-                                        DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                                        DataColumn(label: Text('Action', style: TextStyle(fontWeight: FontWeight.bold))),
-                                      ],
-                                      rows: filtered.map((n) {
-                                        final timeStr = DateFormat('dd MMM yyyy, hh:mm a').format(n.createdAt);
-                                        return DataRow(
-                                          onSelectChanged: (_) => _handleNotificationClick(context, ref, n),
-                                          cells: [
-                                            DataCell(Text(timeStr, style: const TextStyle(fontSize: 13))),
-                                            DataCell(_buildTypeBadge(n.type)),
-                                            DataCell(Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                Text(n.title, style: TextStyle(fontWeight: n.read ? FontWeight.normal : FontWeight.bold, fontSize: 13)),
-                                                const SizedBox(height: 2),
-                                                Text(n.message, style: TextStyle(color: Colors.grey.shade600, fontSize: 12), overflow: TextOverflow.ellipsis),
-                                              ],
-                                            )),
-                                            DataCell(Text(n.read ? 'READ' : 'UNREAD', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: n.read ? Colors.grey : Colors.red))),
-                                            DataCell(Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                if (!n.read)
-                                                  IconButton(
-                                                    icon: const Icon(Icons.mark_email_read_outlined, size: 16),
-                                                    tooltip: 'Mark as read',
-                                                    onPressed: () => ref.read(notificationProvider.notifier).markAsRead(n.id),
-                                                  ),
-                                                IconButton(
-                                                  icon: const Icon(Icons.launch, size: 16),
-                                                  tooltip: 'View details',
-                                                  onPressed: () => _handleNotificationClick(context, ref, n),
-                                                ),
-                                              ],
-                                            )),
-                                          ],
-                                        );
-                                      }).toList(),
-                                    ),
+                  ? const Center(
+                      child: Text('No matching notifications found.'),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth: constraints.maxWidth,
+                                ),
+                                child: DataTable(
+                                  showCheckboxColumn: false,
+                                  headingRowColor: WidgetStateProperty.all(
+                                    Colors.grey.shade50,
                                   ),
-                                );
-                              },
-                            ),
-                          ),
+                                  columns: const [
+                                    DataColumn(
+                                      label: Text(
+                                        'Time',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Type',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Message',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Status',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    DataColumn(
+                                      label: Text(
+                                        'Action',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  rows: filtered.map((n) {
+                                    final timeStr = DateFormat(
+                                      'dd MMM yyyy, hh:mm a',
+                                    ).format(n.createdAt);
+                                    return DataRow(
+                                      onSelectChanged: (_) =>
+                                          _handleNotificationClick(
+                                            context,
+                                            ref,
+                                            n,
+                                          ),
+                                      cells: [
+                                        DataCell(
+                                          Text(
+                                            timeStr,
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(_buildTypeBadge(n.type)),
+                                        DataCell(
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                n.title,
+                                                style: TextStyle(
+                                                  fontWeight: n.read
+                                                      ? FontWeight.normal
+                                                      : FontWeight.bold,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                n.message,
+                                                style: TextStyle(
+                                                  color: Colors.grey.shade600,
+                                                  fontSize: 12,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Text(
+                                            n.read ? 'READ' : 'UNREAD',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: n.read
+                                                  ? Colors.grey
+                                                  : Colors.red,
+                                            ),
+                                          ),
+                                        ),
+                                        DataCell(
+                                          Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (!n.read)
+                                                IconButton(
+                                                  icon: const Icon(
+                                                    Icons
+                                                        .mark_email_read_outlined,
+                                                    size: 16,
+                                                  ),
+                                                  tooltip: 'Mark as read',
+                                                  onPressed: () => ref
+                                                      .read(
+                                                        notificationProvider
+                                                            .notifier,
+                                                      )
+                                                      .markAsRead(n.id),
+                                                ),
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.launch,
+                                                  size: 16,
+                                                ),
+                                                tooltip: 'View details',
+                                                onPressed: () =>
+                                                    _handleNotificationClick(
+                                                      context,
+                                                      ref,
+                                                      n,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            );
+                          },
                         ),
+                      ),
+                    ),
             ),
           ),
         ],
@@ -209,12 +358,26 @@ class _WebNotificationsScreenState
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-      child: Text(cleanType.toUpperCase(), style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        cleanType.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 9,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
   }
 
-  void _handleNotificationClick(BuildContext context, WidgetRef ref, NotificationItem n) {
+  void _handleNotificationClick(
+    BuildContext context,
+    WidgetRef ref,
+    NotificationItem n,
+  ) {
     if (!n.read) {
       ref.read(notificationProvider.notifier).markAsRead(n.id);
     }
@@ -224,7 +387,9 @@ class _WebNotificationsScreenState
       context.go('/web/bookings');
     } else if (type.contains('task') || msg.contains('task')) {
       context.go('/web/tasks');
-    } else if (type.contains('feedback') || msg.contains('review') || msg.contains('feedback')) {
+    } else if (type.contains('feedback') ||
+        msg.contains('review') ||
+        msg.contains('feedback')) {
       context.go('/web/feedback');
     } else if (type.contains('user') || type.contains('profile')) {
       context.go('/web/users');

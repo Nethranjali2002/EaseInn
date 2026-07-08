@@ -1,19 +1,5 @@
-/// Admin User Management Screen — CRUD, role assignment, status toggle.
-///
-/// Manages all admin and staff users for the PMS. Provides a searchable table
-/// with role-based access control, user creation/editing dialogs, and
-/// quick status toggling for enabling/disabling accounts.
-///
-/// Key features:
-/// - Summary cards: total users, active, inactive, admin count, staff count
-/// - Multi-criteria filters: search, role, status, property assignment
-/// - User creation/editing with role-dependent property assignment
-/// - Profile image upload for user avatars
-/// - Quick status toggle (active/inactive) without opening edit dialog
-/// - Role badges with color coding (admin=red, manager=blue, staff=green, etc.)
-///
-/// State management: adminUsersProvider (Riverpod) defined in this file.
-/// Users fetched from /api/admin/users with optional role/status filters.
+/// Summary: Admin user management - list, create, edit users; assign roles; toggle status.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -21,7 +7,6 @@ import 'package:shared/shared.dart';
 import '../widgets/web_data_table.dart';
 import '../widgets/web_form_dialog.dart';
 
-/// State class holding user list, loading state, and error for the admin users screen.
 class AdminUsersState {
   final List<User> users;
   final bool isLoading;
@@ -35,14 +20,12 @@ final adminUsersProvider =
       AdminUsersNotifier.new,
     );
 
-/// Notifier managing admin user CRUD operations and state.
 class AdminUsersNotifier extends Notifier<AdminUsersState> {
   @override
   AdminUsersState build() => AdminUsersState();
 
   ApiClient get _api => ref.read(apiClientProvider);
 
-  /// Fetches all users from the admin users API endpoint.
   Future<void> fetchUsers() async {
     state = AdminUsersState(isLoading: true);
     try {
@@ -58,8 +41,6 @@ class AdminUsersNotifier extends Notifier<AdminUsersState> {
     }
   }
 
-  /// Updates a user's role (admin, manager, staff, etc.) via PATCH request.
-  /// Returns true on success, false on error (error stored in state).
   Future<bool> updateUserRole(String userId, String role) async {
     try {
       final response = await _api.patch(
@@ -81,7 +62,6 @@ class AdminUsersNotifier extends Notifier<AdminUsersState> {
     }
   }
 
-  /// Toggles user active/inactive status without deleting the account.
   Future<bool> toggleUserStatus(String userId, bool isActive) async {
     try {
       final response = await _api.patch(
@@ -103,7 +83,6 @@ class AdminUsersNotifier extends Notifier<AdminUsersState> {
     }
   }
 
-  /// Creates a new user with the provided data (name, email, role, properties, etc.).
   Future<bool> createUser(Map<String, dynamic> data) async {
     try {
       final response = await _api.post('/admin/users', data: data);
@@ -188,8 +167,6 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
   Widget build(BuildContext context) {
     final state = ref.watch(adminUsersProvider);
     final properties = ref.watch(propertyProvider).properties;
-
-    // Apply filtering
     final filteredUsers = state.users.where((u) {
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
@@ -212,8 +189,6 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
       }
       return true;
     }).toList();
-
-    // Summary calculation
     final totalUsers = filteredUsers.length;
     final activeUsers = filteredUsers
         .where((u) => u.status.toLowerCase() == 'active')
@@ -263,12 +238,10 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
             child: TabBarView(
               controller: _tabController,
               children: [
-                // Tab 1: Users View
                 SingleChildScrollView(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Summary Cards
                       LayoutBuilder(
                         builder: (context, constraints) {
                           final isDesktop = constraints.maxWidth > 1000;
@@ -330,7 +303,6 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                       ),
                       const SizedBox(height: 20),
 
-                      // Filter Section
                       Card(
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -407,9 +379,18 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                                               value: 'All',
                                               child: Text('All Roles'),
                                             ),
-                                            DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                                            DropdownMenuItem(value: 'manager', child: Text('Manager')),
-                                            DropdownMenuItem(value: 'staff', child: Text('Staff')),
+                                            DropdownMenuItem(
+                                              value: 'admin',
+                                              child: Text('Admin'),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'manager',
+                                              child: Text('Manager'),
+                                            ),
+                                            DropdownMenuItem(
+                                              value: 'staff',
+                                              child: Text('Staff'),
+                                            ),
                                           ],
                                           onChanged: (v) => setState(
                                             () => _selectedRole = v!,
@@ -542,7 +523,11 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.admin_panel_settings, size: 20, color: Colors.indigo.shade600),
+                            Icon(
+                              Icons.admin_panel_settings,
+                              size: 20,
+                              color: Colors.indigo.shade600,
+                            ),
                             const SizedBox(width: 8),
                             const Text(
                               'Roles Overview',
@@ -567,7 +552,9 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                               return SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: ConstrainedBox(
-                                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                  constraints: BoxConstraints(
+                                    minWidth: constraints.maxWidth,
+                                  ),
                                   child: DataTable(
                                     showCheckboxColumn: false,
                                     headingRowColor: WidgetStateProperty.all(
@@ -583,15 +570,82 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                                     ),
                                     columnSpacing: 40,
                                     columns: const [
-                                      DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
-                                      DataColumn(label: Text('Description', style: TextStyle(fontWeight: FontWeight.bold))),
-                                      DataColumn(label: Text('Assigned Users', style: TextStyle(fontWeight: FontWeight.bold))),
-                                      DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                                      DataColumn(
+                                        label: Text(
+                                          'Role',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: Text(
+                                          'Description',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: Text(
+                                          'Assigned Users',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: Text(
+                                          'Status',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                     rows: [
-                                      _roleCountRow('Admin', Icons.shield, Colors.indigo, 'Full system access, user management, settings', state.users.where((u) => u.role.toLowerCase() == 'admin').length, true),
-                                      _roleCountRow('Manager', Icons.badge, Colors.blue, 'Property management, bookings, reports', state.users.where((u) => u.role.toLowerCase() == 'manager').length, true),
-                                      _roleCountRow('Staff', Icons.person, Colors.green, 'Task updates, room status, assigned work', state.users.where((u) => u.role.toLowerCase() == 'staff').length, true),
+                                      _roleCountRow(
+                                        'Admin',
+                                        Icons.shield,
+                                        Colors.indigo,
+                                        'Full system access, user management, settings',
+                                        state.users
+                                            .where(
+                                              (u) =>
+                                                  u.role.toLowerCase() ==
+                                                  'admin',
+                                            )
+                                            .length,
+                                        true,
+                                      ),
+                                      _roleCountRow(
+                                        'Manager',
+                                        Icons.badge,
+                                        Colors.blue,
+                                        'Property management, bookings, reports',
+                                        state.users
+                                            .where(
+                                              (u) =>
+                                                  u.role.toLowerCase() ==
+                                                  'manager',
+                                            )
+                                            .length,
+                                        true,
+                                      ),
+                                      _roleCountRow(
+                                        'Staff',
+                                        Icons.person,
+                                        Colors.green,
+                                        'Task updates, room status, assigned work',
+                                        state.users
+                                            .where(
+                                              (u) =>
+                                                  u.role.toLowerCase() ==
+                                                  'staff',
+                                            )
+                                            .length,
+                                        true,
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -602,7 +656,11 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                         const SizedBox(height: 36),
                         Row(
                           children: [
-                            Icon(Icons.grid_view, size: 20, color: Colors.indigo.shade600),
+                            Icon(
+                              Icons.grid_view,
+                              size: 20,
+                              color: Colors.indigo.shade600,
+                            ),
                             const SizedBox(width: 8),
                             const Text(
                               'Modules & Permission Matrix',
@@ -627,7 +685,9 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                               return SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: ConstrainedBox(
-                                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                                  constraints: BoxConstraints(
+                                    minWidth: constraints.maxWidth,
+                                  ),
                                   child: DataTable(
                                     showCheckboxColumn: false,
                                     headingRowColor: WidgetStateProperty.all(
@@ -643,20 +703,96 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                                     ),
                                     columnSpacing: 30,
                                     columns: const [
-                                      DataColumn(label: Text('Module', style: TextStyle(fontWeight: FontWeight.bold))),
-                                      DataColumn(label: Text('Admin', style: TextStyle(fontWeight: FontWeight.bold))),
-                                      DataColumn(label: Text('Manager', style: TextStyle(fontWeight: FontWeight.bold))),
-                                      DataColumn(label: Text('Staff', style: TextStyle(fontWeight: FontWeight.bold))),
+                                      DataColumn(
+                                        label: Text(
+                                          'Module',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: Text(
+                                          'Admin',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: Text(
+                                          'Manager',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: Text(
+                                          'Staff',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
                                     ],
                                     rows: [
-                                      _matrixRow('Properties', Icons.home, 'Full Access', 'Full Access', 'View Only'),
-                                      _matrixRow('Rooms', Icons.king_bed, 'Full Access', 'Full Access', 'View Only'),
-                                      _matrixRow('Bookings', Icons.event_available, 'Full Access', 'Full Access', 'View Only'),
-                                      _matrixRow('Tasks', Icons.task_alt, 'Full Access', 'Full Access', 'Update Assigned'),
-                                      _matrixRow('Payments', Icons.payments, 'Full Access', 'Full Access', 'View Only'),
-                                      _matrixRow('Reports/Finance', Icons.analytics, 'Full Access', 'Full Access', 'No Access'),
-                                      _matrixRow('Users/Staff', Icons.people, 'Full Access', 'View Only', 'No Access'),
-                                      _matrixRow('Feedback', Icons.feedback, 'Full Access', 'Full Access', 'No Access'),
+                                      _matrixRow(
+                                        'Properties',
+                                        Icons.home,
+                                        'Full Access',
+                                        'Full Access',
+                                        'View Only',
+                                      ),
+                                      _matrixRow(
+                                        'Rooms',
+                                        Icons.king_bed,
+                                        'Full Access',
+                                        'Full Access',
+                                        'View Only',
+                                      ),
+                                      _matrixRow(
+                                        'Bookings',
+                                        Icons.event_available,
+                                        'Full Access',
+                                        'Full Access',
+                                        'View Only',
+                                      ),
+                                      _matrixRow(
+                                        'Tasks',
+                                        Icons.task_alt,
+                                        'Full Access',
+                                        'Full Access',
+                                        'Update Assigned',
+                                      ),
+                                      _matrixRow(
+                                        'Payments',
+                                        Icons.payments,
+                                        'Full Access',
+                                        'Full Access',
+                                        'View Only',
+                                      ),
+                                      _matrixRow(
+                                        'Reports/Finance',
+                                        Icons.analytics,
+                                        'Full Access',
+                                        'Full Access',
+                                        'No Access',
+                                      ),
+                                      _matrixRow(
+                                        'Users/Staff',
+                                        Icons.people,
+                                        'Full Access',
+                                        'View Only',
+                                        'No Access',
+                                      ),
+                                      _matrixRow(
+                                        'Feedback',
+                                        Icons.feedback,
+                                        'Full Access',
+                                        'Full Access',
+                                        'No Access',
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -732,7 +868,14 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
     );
   }
 
-  DataRow _roleCountRow(String role, IconData icon, Color color, String description, int count, bool isActive) {
+  DataRow _roleCountRow(
+    String role,
+    IconData icon,
+    Color color,
+    String description,
+    int count,
+    bool isActive,
+  ) {
     return DataRow(
       cells: [
         DataCell(
@@ -748,7 +891,13 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                 child: Icon(icon, size: 16, color: color),
               ),
               const SizedBox(width: 10),
-              Text(role, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              Text(
+                role,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
             ],
           ),
         ),
@@ -783,10 +932,7 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                 )
               : Text(
                   '0 staff members',
-                  style: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade400, fontSize: 13),
                 ),
         ),
         DataCell(
@@ -802,7 +948,9 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                 Icon(
                   isActive ? Icons.check_circle : Icons.pause_circle,
                   size: 12,
-                  color: isActive ? Colors.green.shade600 : Colors.grey.shade500,
+                  color: isActive
+                      ? Colors.green.shade600
+                      : Colors.grey.shade500,
                 ),
                 const SizedBox(width: 4),
                 Text(
@@ -810,7 +958,9 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: isActive ? Colors.green.shade700 : Colors.grey.shade600,
+                    color: isActive
+                        ? Colors.green.shade700
+                        : Colors.grey.shade600,
                   ),
                 ),
               ],
@@ -836,7 +986,13 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
             children: [
               Icon(icon, size: 16, color: Colors.grey.shade600),
               const SizedBox(width: 8),
-              Text(module, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              Text(
+                module,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
             ],
           ),
         ),
@@ -885,7 +1041,11 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
           ],
           Text(
             text,
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: fg,
+            ),
           ),
         ],
       ),
@@ -896,8 +1056,8 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
     final displayId = u.code.isNotEmpty
         ? u.code
         : (u.employeeId.isNotEmpty
-            ? u.employeeId
-            : 'EMP-${u.id.substring(u.id.length - 4).toUpperCase()}');
+              ? u.employeeId
+              : 'EMP-${u.id.substring(u.id.length - 4).toUpperCase()}');
     final propName = properties
         .firstWhere(
           (p) => p.id == u.property,
@@ -915,8 +1075,10 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
             CircleAvatar(
               radius: 14,
               backgroundColor: _roleColor(u.role).withOpacity(0.1),
-                    backgroundImage: (u.profileImage.isNotEmpty) ? NetworkImage(resolveImageUrl(u.profileImage)) : null,
-                    child: (u.profileImage.isEmpty)
+              backgroundImage: (u.profileImage.isNotEmpty)
+                  ? NetworkImage(resolveImageUrl(u.profileImage))
+                  : null,
+              child: (u.profileImage.isEmpty)
                   ? Text(
                       u.name.isNotEmpty ? u.name[0].toUpperCase() : '?',
                       style: TextStyle(
@@ -1046,11 +1208,20 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
           return AlertDialog(
             title: Row(
               children: [
-                Icon(user == null ? Icons.person_add : Icons.edit, size: 20, color: const Color(0xFF1565C0)),
+                Icon(
+                  user == null ? Icons.person_add : Icons.edit,
+                  size: 20,
+                  color: const Color(0xFF1565C0),
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  user == null ? 'Add New Staff Member' : 'Edit Staff - ${user.name}',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  user == null
+                      ? 'Add New Staff Member'
+                      : 'Edit Staff - ${user.name}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
                 ),
                 const Spacer(),
                 IconButton(
@@ -1075,7 +1246,10 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                               child: WebFormField(
                                 label: 'Full Name *',
                                 controller: nameController,
-                                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                                validator: (v) =>
+                                    (v == null || v.trim().isEmpty)
+                                    ? 'Required'
+                                    : null,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -1083,7 +1257,10 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                               child: WebFormField(
                                 label: 'Email Address *',
                                 controller: emailController,
-                                validator: (v) => (v == null || !v.contains('@')) ? 'Invalid email' : null,
+                                validator: (v) =>
+                                    (v == null || !v.contains('@'))
+                                    ? 'Invalid email'
+                                    : null,
                               ),
                             ),
                           ],
@@ -1095,9 +1272,16 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                                 label: 'Phone Number *',
                                 controller: phoneController,
                                 validator: (v) {
-                                  if (v == null || v.trim().isEmpty) return 'Required';
-                                  final cleaned = v.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-                                  if (!RegExp(r'^\+?\d{7,15}$').hasMatch(cleaned)) return 'Invalid phone number';
+                                  if (v == null || v.trim().isEmpty)
+                                    return 'Required';
+                                  final cleaned = v.replaceAll(
+                                    RegExp(r'[\s\-\(\)]'),
+                                    '',
+                                  );
+                                  if (!RegExp(
+                                    r'^\+?\d{7,15}$',
+                                  ).hasMatch(cleaned))
+                                    return 'Invalid phone number';
                                   return null;
                                 },
                               ),
@@ -1107,7 +1291,9 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                               child: WebFormField(
                                 label: 'Password *',
                                 controller: passwordController,
-                                validator: (v) => (v == null || v.length < 6) ? 'Min 6 characters' : null,
+                                validator: (v) => (v == null || v.length < 6)
+                                    ? 'Min 6 characters'
+                                    : null,
                               ),
                             ),
                           ],
@@ -1120,13 +1306,26 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: DropdownButtonFormField<String>(
                                   initialValue: role,
-                                  decoration: const InputDecoration(labelText: 'Role *', border: OutlineInputBorder()),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Role *',
+                                    border: OutlineInputBorder(),
+                                  ),
                                   items: const [
-                                    DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                                    DropdownMenuItem(value: 'manager', child: Text('Manager')),
-                                    DropdownMenuItem(value: 'staff', child: Text('Staff')),
+                                    DropdownMenuItem(
+                                      value: 'admin',
+                                      child: Text('Admin'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'manager',
+                                      child: Text('Manager'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'staff',
+                                      child: Text('Staff'),
+                                    ),
                                   ],
-                                  onChanged: (v) => setDialogState(() => role = v!),
+                                  onChanged: (v) =>
+                                      setDialogState(() => role = v!),
                                 ),
                               ),
                             ),
@@ -1136,9 +1335,20 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: DropdownButtonFormField<String>(
                                   initialValue: propertyId,
-                                  decoration: const InputDecoration(labelText: 'Property *', border: OutlineInputBorder()),
-                                  items: properties.map((p) => DropdownMenuItem(value: p.id, child: Text(p.name))).toList(),
-                                  onChanged: (v) => setDialogState(() => propertyId = v),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Property *',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: properties
+                                      .map(
+                                        (p) => DropdownMenuItem(
+                                          value: p.id,
+                                          child: Text(p.name),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (v) =>
+                                      setDialogState(() => propertyId = v),
                                 ),
                               ),
                             ),
@@ -1150,8 +1360,12 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                         _formSectionHeader('User Info (View Only)'),
                         _readOnlyField('Name', user.name),
                         _readOnlyField('Email', user.email),
-                        _readOnlyField('Phone', user.phone.isNotEmpty ? user.phone : 'N/A'),
-                        if (user.employeeId.isNotEmpty) _readOnlyField('Employee ID', user.employeeId),
+                        _readOnlyField(
+                          'Phone',
+                          user.phone.isNotEmpty ? user.phone : 'N/A',
+                        ),
+                        if (user.employeeId.isNotEmpty)
+                          _readOnlyField('Employee ID', user.employeeId),
                         const SizedBox(height: 12),
                         _formSectionHeader('Access Control'),
                         Row(
@@ -1162,21 +1376,46 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                                   padding: const EdgeInsets.only(bottom: 16),
                                   child: DropdownButtonFormField<String>(
                                     initialValue: role,
-                                    decoration: const InputDecoration(labelText: 'Role *', border: OutlineInputBorder()),
+                                    decoration: const InputDecoration(
+                                      labelText: 'Role *',
+                                      border: OutlineInputBorder(),
+                                    ),
                                     items: [
-                                      const DropdownMenuItem(value: 'admin', child: Text('Admin')),
-                                      const DropdownMenuItem(value: 'manager', child: Text('Manager')),
-                                      const DropdownMenuItem(value: 'staff', child: Text('Staff')),
-                                      if (!['admin', 'manager', 'staff'].contains(role))
-                                        DropdownMenuItem(value: role, child: Text('${role.toUpperCase()} (Legacy)')),
+                                      const DropdownMenuItem(
+                                        value: 'admin',
+                                        child: Text('Admin'),
+                                      ),
+                                      const DropdownMenuItem(
+                                        value: 'manager',
+                                        child: Text('Manager'),
+                                      ),
+                                      const DropdownMenuItem(
+                                        value: 'staff',
+                                        child: Text('Staff'),
+                                      ),
+                                      if (![
+                                        'admin',
+                                        'manager',
+                                        'staff',
+                                      ].contains(role))
+                                        DropdownMenuItem(
+                                          value: role,
+                                          child: Text(
+                                            '${role.toUpperCase()} (Legacy)',
+                                          ),
+                                        ),
                                     ],
-                                    onChanged: (v) => setDialogState(() => role = v!),
+                                    onChanged: (v) =>
+                                        setDialogState(() => role = v!),
                                   ),
                                 ),
                               )
                             else
                               Expanded(
-                                child: _readOnlyField('Role', role.toUpperCase()),
+                                child: _readOnlyField(
+                                  'Role',
+                                  role.toUpperCase(),
+                                ),
                               ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -1184,9 +1423,20 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: DropdownButtonFormField<String>(
                                   initialValue: propertyId,
-                                  decoration: const InputDecoration(labelText: 'Property', border: OutlineInputBorder()),
-                                  items: properties.map((p) => DropdownMenuItem(value: p.id, child: Text(p.name))).toList(),
-                                  onChanged: (v) => setDialogState(() => propertyId = v),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Property',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  items: properties
+                                      .map(
+                                        (p) => DropdownMenuItem(
+                                          value: p.id,
+                                          child: Text(p.name),
+                                        ),
+                                      )
+                                      .toList(),
+                                  onChanged: (v) =>
+                                      setDialogState(() => propertyId = v),
                                 ),
                               ),
                             ),
@@ -1197,13 +1447,26 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                             padding: const EdgeInsets.only(bottom: 16),
                             child: DropdownButtonFormField<String>(
                               initialValue: status,
-                              decoration: const InputDecoration(labelText: 'Status', border: OutlineInputBorder()),
+                              decoration: const InputDecoration(
+                                labelText: 'Status',
+                                border: OutlineInputBorder(),
+                              ),
                               items: const [
-                                DropdownMenuItem(value: 'Active', child: Text('Active')),
-                                DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
-                                DropdownMenuItem(value: 'Suspended', child: Text('Suspended')),
+                                DropdownMenuItem(
+                                  value: 'Active',
+                                  child: Text('Active'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Inactive',
+                                  child: Text('Inactive'),
+                                ),
+                                DropdownMenuItem(
+                                  value: 'Suspended',
+                                  child: Text('Suspended'),
+                                ),
                               ],
-                              onChanged: (v) => setDialogState(() => status = v!),
+                              onChanged: (v) =>
+                                  setDialogState(() => status = v!),
                             ),
                           )
                         else
@@ -1221,9 +1484,23 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
               ),
               ElevatedButton.icon(
                 icon: isSaving
-                    ? const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Icon(user == null ? Icons.person_add : Icons.save, size: 16),
-                label: Text(isSaving ? 'Saving...' : (user == null ? 'Create Staff' : 'Save Changes')),
+                    ? const SizedBox(
+                        height: 14,
+                        width: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Icon(
+                        user == null ? Icons.person_add : Icons.save,
+                        size: 16,
+                      ),
+                label: Text(
+                  isSaving
+                      ? 'Saving...'
+                      : (user == null ? 'Create Staff' : 'Save Changes'),
+                ),
                 onPressed: isSaving
                     ? null
                     : () async {
@@ -1244,8 +1521,12 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                         data['property'] = propertyId;
 
                         final success = user == null
-                            ? await ref.read(adminUsersProvider.notifier).createUser(data)
-                            : await ref.read(adminUsersProvider.notifier).updateUser(user.id, data);
+                            ? await ref
+                                  .read(adminUsersProvider.notifier)
+                                  .createUser(data)
+                            : await ref
+                                  .read(adminUsersProvider.notifier)
+                                  .updateUser(user.id, data);
 
                         if (success) {
                           if (ctx.mounted) Navigator.pop(ctx);
@@ -1253,7 +1534,11 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                           if (ctx.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text(user == null ? 'Staff member created successfully' : 'Staff member updated successfully'),
+                                content: Text(
+                                  user == null
+                                      ? 'Staff member created successfully'
+                                      : 'Staff member updated successfully',
+                                ),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -1265,7 +1550,10 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2E7D32),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                 ),
               ),
             ],
@@ -1409,7 +1697,7 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
             });
           }
 
-            return DefaultTabController(
+          return DefaultTabController(
             length: 3,
             child: AlertDialog(
               title: Row(
@@ -1417,16 +1705,25 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                   CircleAvatar(
                     radius: 12,
                     backgroundColor: _roleColor(u.role).withOpacity(0.1),
-              backgroundImage: (u.profileImage.isNotEmpty) ? NetworkImage(resolveImageUrl(u.profileImage)) : null,
+                    backgroundImage: (u.profileImage.isNotEmpty)
+                        ? NetworkImage(resolveImageUrl(u.profileImage))
+                        : null,
                     child: (u.profileImage.isEmpty)
-                        ? Icon(Icons.person, size: 14, color: _roleColor(u.role))
+                        ? Icon(
+                            Icons.person,
+                            size: 14,
+                            color: _roleColor(u.role),
+                          )
                         : null,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       u.name,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -1443,33 +1740,76 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                     // Status Banner
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       decoration: BoxDecoration(
-                        color: (u.isActive ? const Color(0xFF2E7D32) : Colors.red).withOpacity(0.08),
+                        color:
+                            (u.isActive ? const Color(0xFF2E7D32) : Colors.red)
+                                .withOpacity(0.08),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: (u.isActive ? const Color(0xFF2E7D32) : Colors.red).withOpacity(0.2)),
+                        border: Border.all(
+                          color:
+                              (u.isActive
+                                      ? const Color(0xFF2E7D32)
+                                      : Colors.red)
+                                  .withOpacity(0.2),
+                        ),
                       ),
                       child: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: u.isActive ? const Color(0xFF2E7D32) : Colors.red,
+                              color: u.isActive
+                                  ? const Color(0xFF2E7D32)
+                                  : Colors.red,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Text(
                               u.isActive ? 'ACTIVE' : 'INACTIVE',
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Text(u.code.isNotEmpty ? u.code : 'EMP-${u.id.substring(u.id.length > 4 ? u.id.length - 4 : 0).toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          Text(
+                            u.code.isNotEmpty
+                                ? u.code
+                                : 'EMP-${u.id.substring(u.id.length > 4 ? u.id.length - 4 : 0).toUpperCase()}',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
                           const SizedBox(width: 8),
-                          Text('•', style: TextStyle(color: Colors.grey.shade400)),
+                          Text(
+                            '•',
+                            style: TextStyle(color: Colors.grey.shade400),
+                          ),
                           const SizedBox(width: 8),
-                          Text(u.role.toUpperCase(), style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                          Text(
+                            u.role.toUpperCase(),
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 13,
+                            ),
+                          ),
                           const Spacer(),
-                          Text(propName, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          Text(
+                            propName,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -1494,123 +1834,104 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
                               spacing: 16,
                               runSpacing: 16,
                               children: [
-                                _detailSection(
-                                  'Personal Information',
-                                  [
-                                    _detailRow(
-                                      'Employee ID',
-                                      u.code.isNotEmpty
-                                          ? u.code
-                                          : (u.employeeId.isNotEmpty
+                                _detailSection('Personal Information', [
+                                  _detailRow(
+                                    'Employee ID',
+                                    u.code.isNotEmpty
+                                        ? u.code
+                                        : (u.employeeId.isNotEmpty
                                               ? u.employeeId
                                               : 'EMP-${u.id.substring(u.id.length - 4).toUpperCase()}'),
-                                    ),
-                                    _detailRow('Full Name', u.name),
-                                    _detailRow(
-                                      'Date Of Birth',
-                                      u.dateOfBirth.isNotEmpty
-                                          ? u.dateOfBirth
-                                          : 'N/A',
-                                    ),
-                                    _detailRow(
-                                      'Gender',
-                                      u.gender.isNotEmpty ? u.gender : 'N/A',
-                                    ),
-                                    _detailRow(
-                                      'NIC / Passport',
-                                      u.nicPassport.isNotEmpty
-                                          ? u.nicPassport
-                                          : 'N/A',
-                                    ),
-                                  ],
-                                ),
-                                _detailSection(
-                                  'Contact Information',
-                                  [
-                                    _detailRow(
-                                      'Phone Number',
-                                      u.phone.isNotEmpty ? u.phone : 'N/A',
-                                    ),
-                                    _detailRow('Email', u.email),
-                                    _detailRow(
-                                      'Address',
-                                      u.address.isNotEmpty ? u.address : 'N/A',
-                                    ),
-                                    _detailRow(
-                                      'City',
-                                      u.city.isNotEmpty ? u.city : 'N/A',
-                                    ),
-                                    _detailRow(
-                                      'District',
-                                      u.district.isNotEmpty
-                                          ? u.district
-                                          : 'N/A',
-                                    ),
-                                  ],
-                                ),
-                                _detailSection(
-                                  'Employment Information',
-                                  [
-                                    _detailRow('Role', u.role.toUpperCase()),
-                                    _detailRow('Assigned Property', propName),
-                                    _detailRow(
-                                      'Join Date',
-                                      u.joinDate.isNotEmpty
-                                          ? u.joinDate
-                                          : 'N/A',
-                                    ),
-                                    _detailRow(
-                                      'Employment Type',
-                                      u.employmentType,
-                                    ),
-                                  ],
-                                ),
-                                _detailSection(
-                                  'Emergency Contact',
-                                  [
-                                    _detailRow(
-                                      'Contact Name',
-                                      u.emergencyName.isNotEmpty
-                                          ? u.emergencyName
-                                          : 'N/A',
-                                    ),
-                                    _detailRow(
-                                      'Relationship',
-                                      u.emergencyRelationship.isNotEmpty
-                                          ? u.emergencyRelationship
-                                          : 'N/A',
-                                    ),
-                                    _detailRow(
-                                      'Phone Number',
-                                      u.emergencyPhone.isNotEmpty
-                                          ? u.emergencyPhone
-                                          : 'N/A',
-                                    ),
-                                  ],
-                                ),
-                                _detailSection(
-                                  'Account Information',
-                                  [
-                                    _detailRow('Username / Email', u.email),
-                                    _detailRow('Status', u.status),
-                                    _detailRow(
-                                      'Created Date',
-                                      u.createdAt != null
-                                          ? DateFormat(
-                                              'dd MMM yyyy',
-                                            ).format(u.createdAt!)
-                                          : 'N/A',
-                                    ),
-                                    _detailRow(
-                                      'Last Login',
-                                      u.lastLogin != null
-                                          ? DateFormat(
-                                              'dd MMM yyyy, hh:mm a',
-                                            ).format(u.lastLogin!)
-                                          : 'Never',
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                  _detailRow('Full Name', u.name),
+                                  _detailRow(
+                                    'Date Of Birth',
+                                    u.dateOfBirth.isNotEmpty
+                                        ? u.dateOfBirth
+                                        : 'N/A',
+                                  ),
+                                  _detailRow(
+                                    'Gender',
+                                    u.gender.isNotEmpty ? u.gender : 'N/A',
+                                  ),
+                                  _detailRow(
+                                    'NIC / Passport',
+                                    u.nicPassport.isNotEmpty
+                                        ? u.nicPassport
+                                        : 'N/A',
+                                  ),
+                                ]),
+                                _detailSection('Contact Information', [
+                                  _detailRow(
+                                    'Phone Number',
+                                    u.phone.isNotEmpty ? u.phone : 'N/A',
+                                  ),
+                                  _detailRow('Email', u.email),
+                                  _detailRow(
+                                    'Address',
+                                    u.address.isNotEmpty ? u.address : 'N/A',
+                                  ),
+                                  _detailRow(
+                                    'City',
+                                    u.city.isNotEmpty ? u.city : 'N/A',
+                                  ),
+                                  _detailRow(
+                                    'District',
+                                    u.district.isNotEmpty ? u.district : 'N/A',
+                                  ),
+                                ]),
+                                _detailSection('Employment Information', [
+                                  _detailRow('Role', u.role.toUpperCase()),
+                                  _detailRow('Assigned Property', propName),
+                                  _detailRow(
+                                    'Join Date',
+                                    u.joinDate.isNotEmpty ? u.joinDate : 'N/A',
+                                  ),
+                                  _detailRow(
+                                    'Employment Type',
+                                    u.employmentType,
+                                  ),
+                                ]),
+                                _detailSection('Emergency Contact', [
+                                  _detailRow(
+                                    'Contact Name',
+                                    u.emergencyName.isNotEmpty
+                                        ? u.emergencyName
+                                        : 'N/A',
+                                  ),
+                                  _detailRow(
+                                    'Relationship',
+                                    u.emergencyRelationship.isNotEmpty
+                                        ? u.emergencyRelationship
+                                        : 'N/A',
+                                  ),
+                                  _detailRow(
+                                    'Phone Number',
+                                    u.emergencyPhone.isNotEmpty
+                                        ? u.emergencyPhone
+                                        : 'N/A',
+                                  ),
+                                ]),
+                                _detailSection('Account Information', [
+                                  _detailRow('Username / Email', u.email),
+                                  _detailRow('Status', u.status),
+                                  _detailRow(
+                                    'Created Date',
+                                    u.createdAt != null
+                                        ? DateFormat(
+                                            'dd MMM yyyy',
+                                          ).format(u.createdAt!)
+                                        : 'N/A',
+                                  ),
+                                  _detailRow(
+                                    'Last Login',
+                                    u.lastLogin != null
+                                        ? DateFormat(
+                                            'dd MMM yyyy, hh:mm a',
+                                          ).format(u.lastLogin!)
+                                        : 'Never',
+                                  ),
+                                ]),
                                 _detailSection('Documents', [
                                   _documentRow('NIC Copy', u.nicCopy),
                                   _documentRow(
@@ -1773,19 +2094,26 @@ class _WebUsersScreenState extends ConsumerState<WebUsersScreen>
     Color color;
 
     if (title.contains('Personal')) {
-      icon = Icons.person; color = const Color(0xFF1565C0);
+      icon = Icons.person;
+      color = const Color(0xFF1565C0);
     } else if (title.contains('Contact')) {
-      icon = Icons.contact_phone; color = const Color(0xFF2E7D32);
+      icon = Icons.contact_phone;
+      color = const Color(0xFF2E7D32);
     } else if (title.contains('Employment')) {
-      icon = Icons.work; color = const Color(0xFF6A1B9A);
+      icon = Icons.work;
+      color = const Color(0xFF6A1B9A);
     } else if (title.contains('Emergency')) {
-      icon = Icons.emergency; color = const Color(0xFFE65100);
+      icon = Icons.emergency;
+      color = const Color(0xFFE65100);
     } else if (title.contains('Account')) {
-      icon = Icons.account_circle; color = const Color(0xFF00695C);
+      icon = Icons.account_circle;
+      color = const Color(0xFF00695C);
     } else if (title.contains('Document')) {
-      icon = Icons.folder_open; color = const Color(0xFF455A64);
+      icon = Icons.folder_open;
+      color = const Color(0xFF455A64);
     } else {
-      icon = Icons.info; color = Colors.blueGrey;
+      icon = Icons.info;
+      color = Colors.blueGrey;
     }
 
     return SizedBox(

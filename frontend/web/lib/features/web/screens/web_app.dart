@@ -18,39 +18,11 @@ import 'public_review_screen.dart';
 import 'web_feedback.dart';
 import 'web_audit_log.dart';
 
-/// ==========================================
-/// WEB APP - Router & Theme Configuration
-/// ==========================================
-/// This file configures the GoRouter navigation system and the Material theme
-/// for the entire web admin portal. It defines:
-///
-/// 1. All routes (URL paths -> screen widgets)
-/// 2. Authentication redirects (unauthenticated users go to login)
-/// 3. The ShellRoute layout (sidebar + content area)
-/// 4. Role-based route access (admin-only routes)
-/// ==========================================
-
-/// ==========================================
-/// ROUTER PROVIDER - GoRouter Configuration
-/// ==========================================
-/// Defines the complete routing table for the web app.
-///
-/// Route structure:
-/// - /web/login - Public login page
-/// - /web/review - Public review page (no auth required)
-/// - /web/* - Protected routes wrapped in WebShell (sidebar layout)
-///
-/// The redirect function handles:
-/// - Unauthenticated users -> /web/login
-/// - Already authenticated users on login page -> /web/dashboard
-/// ==========================================
 final webRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
     initialLocation: '/web/login',
     routes: [
-      // ==========================================
       // PUBLIC ROUTES (No authentication required)
-      // ==========================================
       GoRoute(path: '/web/login', builder: (c, s) => const WebLoginScreen()),
       // Public review page - guests can leave reviews without logging in
       GoRoute(
@@ -61,11 +33,8 @@ final webRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
 
-      // ==========================================
       // PROTECTED ROUTES (Wrapped in WebShell for sidebar layout)
-      // ==========================================
-      // ShellRoute wraps child routes in WebShell, which provides
-      // the persistent sidebar navigation and top bar.
+      // ShellRoute wraps child routes in WebShell, which provides the persistent sidebar navigation and top bar.
       ShellRoute(
         builder: (context, state, child) => WebShell(child: child),
         routes: [
@@ -125,9 +94,7 @@ final webRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
 
-    // ==========================================
     // REDIRECT LOGIC - Authentication Guards
-    // ==========================================
     // Runs on every navigation to enforce authentication rules.
     redirect: (context, state) {
       final auth = ref.read(authProvider);

@@ -14,19 +14,17 @@ class WebDashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
-  String? _selectedPropertyId; // null represents "All Properties"
+  String? _selectedPropertyId;
   bool _isLoading = false;
   bool _isStaff = false;
   bool _isAdmin = false;
 
-  // Staff-only data
   List<dynamic> _myTasks = [];
   int _myOpenTasks = 0;
   int _myInProgressTasks = 0;
   int _myCompletedTasks = 0;
   int _myOverdueTasks = 0;
 
-  // Single Property Stats
   Map<String, dynamic>? _propertyStats;
   Map<String, dynamic>? _bookingStats;
   Map<String, dynamic>? _taskStats;
@@ -39,7 +37,6 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
   int _aggTomorrowCheckIns = 0;
   int _aggCompletedTasks = 0;
 
-  // Aggregated / Consolidated Stats (when "All Properties" is selected)
   int _aggTotalProperties = 0;
   int _aggActiveProperties = 0;
   int _aggTotalRooms = 0;
@@ -120,10 +117,15 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
 
         // Monthly revenue for forecast
         final mr = d['monthlyRevenue'] as List? ?? [];
-        _monthlyRevenueData = mr.map<Map<String, dynamic>>((m) => {
-          '_id': '${m['_id']?['year']}-${m['_id']?['month']?.toString().padLeft(2, '0')}',
-          'total': m['total'],
-        }).toList();
+        _monthlyRevenueData = mr
+            .map<Map<String, dynamic>>(
+              (m) => {
+                '_id':
+                    '${m['_id']?['year']}-${m['_id']?['month']?.toString().padLeft(2, '0')}',
+                'total': m['total'],
+              },
+            )
+            .toList();
 
         // Set booking stats for pie chart
         _bookingStats = {
@@ -161,7 +163,10 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
             final bks = bd is Map ? (bd['bookings'] as List?) ?? [] : [];
             for (final b in bks) {
               if (b is Map<String, dynamic>) {
-                _aggRecentBookings.add({...b, 'property': {'name': p.name}});
+                _aggRecentBookings.add({
+                  ...b,
+                  'property': {'name': p.name},
+                });
               }
             }
           } catch (_) {}
@@ -171,7 +176,10 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
             final tks = td is Map ? (td['tasks'] as List?) ?? [] : [];
             for (final t in tks) {
               if (t is Map<String, dynamic>) {
-                _aggRecentTasks.add({...t, 'property': {'name': p.name}});
+                _aggRecentTasks.add({
+                  ...t,
+                  'property': {'name': p.name},
+                });
               }
             }
           } catch (_) {}
@@ -188,23 +196,48 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
         Map<String, dynamic>? prD, fcD;
 
         final results = await Future.wait([
-          api.get('/properties/$_selectedPropertyId/stats').catchError((_) => null),
-          api.get('/properties/$_selectedPropertyId/bookings/stats').catchError((_) => null),
-          api.get('/properties/$_selectedPropertyId/tasks/stats').catchError((_) => null),
-          api.get('/properties/$_selectedPropertyId/payments/stats').catchError((_) => null),
-          api.get('/properties/$_selectedPropertyId/analytics/revenue').catchError((_) => null),
-          api.get('/properties/$_selectedPropertyId/bookings?limit=5').catchError((_) => null),
-          api.get('/properties/$_selectedPropertyId/tasks?limit=5').catchError((_) => null),
-          api.get('/properties/$_selectedPropertyId/analytics/pricing').catchError((_) => null),
-          api.get('/properties/$_selectedPropertyId/analytics/forecast').catchError((_) => null),
-          api.get('/properties/$_selectedPropertyId/feedback/stats').catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/stats')
+              .catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/bookings/stats')
+              .catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/tasks/stats')
+              .catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/payments/stats')
+              .catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/analytics/revenue')
+              .catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/bookings?limit=5')
+              .catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/tasks?limit=5')
+              .catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/analytics/pricing')
+              .catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/analytics/forecast')
+              .catchError((_) => null),
+          api
+              .get('/properties/$_selectedPropertyId/feedback/stats')
+              .catchError((_) => null),
         ]);
 
-        if (results[0] != null) ps = results[0]!.data['data'] as Map<String, dynamic>?;
-        if (results[1] != null) bs = results[1]!.data['data'] as Map<String, dynamic>?;
-        if (results[2] != null) ts = results[2]!.data['data'] as Map<String, dynamic>?;
-        if (results[3] != null) payS = results[3]!.data['data'] as Map<String, dynamic>?;
-        if (results[4] != null) revD = (results[4]!.data['data'] as List?) ?? [];
+        if (results[0] != null)
+          ps = results[0]!.data['data'] as Map<String, dynamic>?;
+        if (results[1] != null)
+          bs = results[1]!.data['data'] as Map<String, dynamic>?;
+        if (results[2] != null)
+          ts = results[2]!.data['data'] as Map<String, dynamic>?;
+        if (results[3] != null)
+          payS = results[3]!.data['data'] as Map<String, dynamic>?;
+        if (results[4] != null)
+          revD = (results[4]!.data['data'] as List?) ?? [];
         if (results[5] != null) {
           final bd = results[5]!.data['data'];
           bkList = bd is Map ? (bd['bookings'] as List?) ?? [] : [];
@@ -213,9 +246,12 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
           final td = results[6]!.data['data'];
           tkList = td is Map ? (td['tasks'] as List?) ?? [] : [];
         }
-        if (results[7] != null) prD = results[7]!.data['data'] as Map<String, dynamic>?;
-        if (results[8] != null) fcD = results[8]!.data['data'] as Map<String, dynamic>?;
-        if (results[9] != null) fbS = results[9]!.data['data'] as Map<String, dynamic>?;
+        if (results[7] != null)
+          prD = results[7]!.data['data'] as Map<String, dynamic>?;
+        if (results[8] != null)
+          fcD = results[8]!.data['data'] as Map<String, dynamic>?;
+        if (results[9] != null)
+          fbS = results[9]!.data['data'] as Map<String, dynamic>?;
 
         _propertyStats = ps;
         _bookingStats = bs;
@@ -227,7 +263,8 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
         _pricingData = prD;
         _forecastData = fcD;
         if (fbS != null) {
-          _aggRating = (fbS['averageRating'] ?? fbS['avgRating'] ?? 0).toDouble();
+          _aggRating = (fbS['averageRating'] ?? fbS['avgRating'] ?? 0)
+              .toDouble();
           _aggTotalReviews = fbS['totalReviews'] ?? fbS['total'] ?? 0;
         }
       }
@@ -248,14 +285,22 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
       _myTasks = data is Map ? (data['tasks'] as List?) ?? [] : [];
 
       _myOpenTasks = _myTasks.where((t) => t['status'] == 'open').length;
-      _myInProgressTasks = _myTasks.where((t) => t['status'] == 'in-progress').length;
-      _myCompletedTasks = _myTasks.where((t) => t['status'] == 'completed').length;
+      _myInProgressTasks = _myTasks
+          .where((t) => t['status'] == 'in-progress')
+          .length;
+      _myCompletedTasks = _myTasks
+          .where((t) => t['status'] == 'completed')
+          .length;
       final now = DateTime.now();
-      _myOverdueTasks = _myTasks.where((t) =>
-          t['status'] != 'completed' &&
-          t['dueDate'] != null &&
-          DateTime.tryParse(t['dueDate']) != null &&
-          DateTime.parse(t['dueDate']).isBefore(now)).length;
+      _myOverdueTasks = _myTasks
+          .where(
+            (t) =>
+                t['status'] != 'completed' &&
+                t['dueDate'] != null &&
+                DateTime.tryParse(t['dueDate']) != null &&
+                DateTime.parse(t['dueDate']).isBefore(now),
+          )
+          .length;
 
       setState(() => _isLoading = false);
     } catch (_) {
@@ -430,7 +475,8 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              if (_isAdmin) Expanded(child: _buildRevenueTrendWidget()),
+                              if (_isAdmin)
+                                Expanded(child: _buildRevenueTrendWidget()),
                               if (_isAdmin) const SizedBox(width: 16),
                               Expanded(child: _buildCalendarSummaryWidget()),
                             ],
@@ -451,17 +497,36 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
                               decoration: BoxDecoration(
-                                gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF0EA5E9)]),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF6366F1),
+                                    Color(0xFF0EA5E9),
+                                  ],
+                                ),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.psychology, size: 16, color: Colors.white),
+                                  Icon(
+                                    Icons.psychology,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
                                   SizedBox(width: 6),
-                                  Text('AI Powered', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                                  Text(
+                                    'AI Powered',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
@@ -679,9 +744,13 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                   final status = t['status'] ?? 'open';
                   final priority = t['priority'] ?? 'medium';
                   final dueDate = t['dueDate'] != null
-                      ? DateFormat('dd MMM, hh:mm a').format(DateTime.parse(t['dueDate']))
+                      ? DateFormat(
+                          'dd MMM, hh:mm a',
+                        ).format(DateTime.parse(t['dueDate']))
                       : 'No due date';
-                  final room = t['room'] is Map ? t['room']['roomNumber'] : t['room'];
+                  final room = t['room'] is Map
+                      ? t['room']['roomNumber']
+                      : t['room'];
 
                   Color statusColor;
                   IconData statusIcon;
@@ -711,7 +780,8 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                       priorityColor = Colors.grey;
                   }
 
-                  final isOverdue = status != 'completed' &&
+                  final isOverdue =
+                      status != 'completed' &&
                       t['dueDate'] != null &&
                       DateTime.tryParse(t['dueDate']) != null &&
                       DateTime.parse(t['dueDate']).isBefore(DateTime.now());
@@ -721,61 +791,94 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                     margin: const EdgeInsets.only(bottom: 8),
                     shape: RoundedRectangleBorder(
                       side: BorderSide(
-                        color: isOverdue ? Colors.red.withOpacity(0.3) : Colors.grey.shade100,
+                        color: isOverdue
+                            ? Colors.red.withOpacity(0.3)
+                            : Colors.grey.shade100,
                       ),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 4,
+                      ),
                       leading: CircleAvatar(
                         backgroundColor: statusColor.withOpacity(0.1),
                         child: Icon(statusIcon, color: statusColor, size: 20),
                       ),
                       title: Text(
                         title,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
                       ),
                       subtitle: Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
                             decoration: BoxDecoration(
                               color: priorityColor.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
                               priority.toUpperCase(),
-                              style: TextStyle(fontSize: 9, color: priorityColor, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                fontSize: 9,
+                                color: priorityColor,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
                           if (room != null)
                             Text(
                               'Room $room',
-                              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                              ),
                             ),
                           const SizedBox(width: 8),
-                          Icon(Icons.access_time, size: 12, color: isOverdue ? Colors.red : Colors.grey),
+                          Icon(
+                            Icons.access_time,
+                            size: 12,
+                            color: isOverdue ? Colors.red : Colors.grey,
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             dueDate,
                             style: TextStyle(
                               fontSize: 11,
-                              color: isOverdue ? Colors.red : Colors.grey.shade600,
-                              fontWeight: isOverdue ? FontWeight.bold : FontWeight.normal,
+                              color: isOverdue
+                                  ? Colors.red
+                                  : Colors.grey.shade600,
+                              fontWeight: isOverdue
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
                             ),
                           ),
                         ],
                       ),
                       trailing: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
                         decoration: BoxDecoration(
                           color: statusColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           status.toString().toUpperCase().replaceAll('-', ' '),
-                          style: TextStyle(fontSize: 10, color: statusColor, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: statusColor,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                       onTap: () => context.go('/web/tasks'),
@@ -848,7 +951,9 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
         : (int.tryParse(_taskStats?['overdueTasks']?.toString() ?? '') ?? 0);
 
     final rating = _selectedPropertyId == null ? _aggRating : _aggRating;
-    final totalReviews = _selectedPropertyId == null ? _aggTotalReviews : _aggTotalReviews;
+    final totalReviews = _selectedPropertyId == null
+        ? _aggTotalReviews
+        : _aggTotalReviews;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1169,17 +1274,45 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
   // --- 4. BOOKING OVERVIEW WIDGET ---
   Widget _buildBookingOverviewWidget() {
     final confirmed = _selectedPropertyId == null
-        ? (_bookingStats != null ? (_bookingStats!['confirmedBookings'] ?? 0) : 0)
-        : (_bookingStats != null ? (_bookingStats!['confirmedBookings'] ?? 0) : _recentBookings.where((b) => b is Map && b['bookingStatus'] == 'confirmed').length);
+        ? (_bookingStats != null
+              ? (_bookingStats!['confirmedBookings'] ?? 0)
+              : 0)
+        : (_bookingStats != null
+              ? (_bookingStats!['confirmedBookings'] ?? 0)
+              : _recentBookings
+                    .where((b) => b is Map && b['bookingStatus'] == 'confirmed')
+                    .length);
     final checkedIn = _selectedPropertyId == null
-        ? (_bookingStats != null ? (_bookingStats!['checkedInBookings'] ?? 0) : 0)
-        : (_bookingStats != null ? (_bookingStats!['checkedInBookings'] ?? 0) : _recentBookings.where((b) => b is Map && b['bookingStatus'] == 'checked-in').length);
+        ? (_bookingStats != null
+              ? (_bookingStats!['checkedInBookings'] ?? 0)
+              : 0)
+        : (_bookingStats != null
+              ? (_bookingStats!['checkedInBookings'] ?? 0)
+              : _recentBookings
+                    .where(
+                      (b) => b is Map && b['bookingStatus'] == 'checked-in',
+                    )
+                    .length);
     final checkedOut = _selectedPropertyId == null
-        ? (_bookingStats != null ? (_bookingStats!['checkedOutBookings'] ?? 0) : 0)
-        : (_bookingStats != null ? (_bookingStats!['checkedOutBookings'] ?? 0) : _recentBookings.where((b) => b is Map && b['bookingStatus'] == 'checked-out').length);
+        ? (_bookingStats != null
+              ? (_bookingStats!['checkedOutBookings'] ?? 0)
+              : 0)
+        : (_bookingStats != null
+              ? (_bookingStats!['checkedOutBookings'] ?? 0)
+              : _recentBookings
+                    .where(
+                      (b) => b is Map && b['bookingStatus'] == 'checked-out',
+                    )
+                    .length);
     final cancelled = _selectedPropertyId == null
-        ? (_bookingStats != null ? (_bookingStats!['cancelledBookings'] ?? 0) : 0)
-        : (_bookingStats != null ? (_bookingStats!['cancelledBookings'] ?? 0) : _recentBookings.where((b) => b is Map && b['bookingStatus'] == 'cancelled').length);
+        ? (_bookingStats != null
+              ? (_bookingStats!['cancelledBookings'] ?? 0)
+              : 0)
+        : (_bookingStats != null
+              ? (_bookingStats!['cancelledBookings'] ?? 0)
+              : _recentBookings
+                    .where((b) => b is Map && b['bookingStatus'] == 'cancelled')
+                    .length);
 
     return Card(
       elevation: 0,
@@ -1437,7 +1570,9 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                         fontSize: 13,
                       ),
                     ),
-                    subtitle: Text('Room $room${b['property'] is Map ? ' • ${b['property']['name'] ?? ''}' : ''}'),
+                    subtitle: Text(
+                      'Room $room${b['property'] is Map ? ' • ${b['property']['name'] ?? ''}' : ''}',
+                    ),
                     trailing: Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -1831,13 +1966,25 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
     );
   }
 
-  Widget _buildInsightTile(IconData icon, String label, String value, Color color) {
+  Widget _buildInsightTile(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
     return Row(
       children: [
         Icon(icon, color: color, size: 18),
         const SizedBox(width: 8),
         Expanded(child: Text(label, style: const TextStyle(fontSize: 12))),
-        Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+            color: color,
+          ),
+        ),
       ],
     );
   }
@@ -1846,17 +1993,40 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
   Widget _buildAIPricingSuggestionsWidget() {
     if (_selectedPropertyId == null) {
       final totalRooms = _aggTotalRooms;
-      final occupancyRate = totalRooms > 0 ? (_aggActiveBookings / totalRooms * 100).round() : 0;
-      final avgRevenuePerRoom = totalRooms > 0 ? (_aggTotalRevenue / totalRooms).round() : 0;
-      final taskCompletionRate = (_aggOpenTasks + _aggInProgressTasks + _aggCompletedTasks) > 0
-          ? (_aggCompletedTasks / (_aggOpenTasks + _aggInProgressTasks + _aggCompletedTasks) * 100).round()
+      final occupancyRate = totalRooms > 0
+          ? (_aggActiveBookings / totalRooms * 100).round()
           : 0;
-      final demandLevel = occupancyRate > 70 ? 'High' : occupancyRate > 40 ? 'Medium' : 'Low';
-      final demandColor = demandLevel == 'High' ? Colors.green : demandLevel == 'Medium' ? Colors.orange : Colors.red;
-      final peakSeason = DateTime.now().month >= 11 || DateTime.now().month <= 1 || (DateTime.now().month >= 6 && DateTime.now().month <= 8);
+      final avgRevenuePerRoom = totalRooms > 0
+          ? (_aggTotalRevenue / totalRooms).round()
+          : 0;
+      final taskCompletionRate =
+          (_aggOpenTasks + _aggInProgressTasks + _aggCompletedTasks) > 0
+          ? (_aggCompletedTasks /
+                    (_aggOpenTasks + _aggInProgressTasks + _aggCompletedTasks) *
+                    100)
+                .round()
+          : 0;
+      final demandLevel = occupancyRate > 70
+          ? 'High'
+          : occupancyRate > 40
+          ? 'Medium'
+          : 'Low';
+      final demandColor = demandLevel == 'High'
+          ? Colors.green
+          : demandLevel == 'Medium'
+          ? Colors.orange
+          : Colors.red;
+      final peakSeason =
+          DateTime.now().month >= 11 ||
+          DateTime.now().month <= 1 ||
+          (DateTime.now().month >= 6 && DateTime.now().month <= 8);
       final weekend = DateTime.now().weekday >= 5;
       final confidence = (0.55 + (occupancyRate / 200.0)).clamp(0.55, 0.92);
-      final suggestedIncrease = demandLevel == 'High' ? 20 : demandLevel == 'Medium' ? 8 : -10;
+      final suggestedIncrease = demandLevel == 'High'
+          ? 20
+          : demandLevel == 'Medium'
+          ? 8
+          : -10;
 
       return Card(
         elevation: 0,
@@ -1872,9 +2042,14 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)]),
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Row(
@@ -1882,33 +2057,73 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                       children: [
                         Icon(Icons.auto_awesome, size: 12, color: Colors.white),
                         SizedBox(width: 4),
-                        Text('AI', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        Text(
+                          'AI',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text('Revenue Intelligence', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+                  const Text(
+                    'Revenue Intelligence',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
                   const Spacer(),
-                  Text('${(confidence * 100).round()}% confidence', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+                  Text(
+                    '${(confidence * 100).round()}% confidence',
+                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+                  ),
                 ],
               ),
               const SizedBox(height: 16),
-              _buildAIMetricRow(Icons.trending_up, 'Occupancy Rate', '$occupancyRate%',
-                  occupancyRate > 70 ? Colors.green : occupancyRate > 40 ? Colors.orange : Colors.red,
-                  occupancyRate / 100.0),
+              _buildAIMetricRow(
+                Icons.trending_up,
+                'Occupancy Rate',
+                '$occupancyRate%',
+                occupancyRate > 70
+                    ? Colors.green
+                    : occupancyRate > 40
+                    ? Colors.orange
+                    : Colors.red,
+                occupancyRate / 100.0,
+              ),
               const SizedBox(height: 10),
-              _buildAIMetricRow(Icons.payments, 'Revenue / Room', 'LKR ${NumberFormat('#,###').format(avgRevenuePerRoom)}',
-                  demandColor, confidence),
+              _buildAIMetricRow(
+                Icons.payments,
+                'Revenue / Room',
+                'LKR ${NumberFormat('#,###').format(avgRevenuePerRoom)}',
+                demandColor,
+                confidence,
+              ),
               const SizedBox(height: 10),
-              _buildAIMetricRow(Icons.task_alt, 'Task Completion', '$taskCompletionRate%',
-                  taskCompletionRate > 70 ? Colors.green : Colors.orange,
-                  taskCompletionRate / 100.0),
+              _buildAIMetricRow(
+                Icons.task_alt,
+                'Task Completion',
+                '$taskCompletionRate%',
+                taskCompletionRate > 70 ? Colors.green : Colors.orange,
+                taskCompletionRate / 100.0,
+              ),
               const SizedBox(height: 14),
               Row(
                 children: [
-                  _buildAIBadge(peakSeason ? '📅 Peak Season' : '📅 Off-Peak', peakSeason ? Colors.green : Colors.grey),
+                  _buildAIBadge(
+                    peakSeason ? '📅 Peak Season' : '📅 Off-Peak',
+                    peakSeason ? Colors.green : Colors.grey,
+                  ),
                   const SizedBox(width: 8),
-                  _buildAIBadge(weekend ? '🌟 Weekend' : '📋 Weekday', weekend ? Colors.orange : Colors.blueGrey),
+                  _buildAIBadge(
+                    weekend ? '🌟 Weekend' : '📋 Weekday',
+                    weekend ? Colors.orange : Colors.blueGrey,
+                  ),
                   const SizedBox(width: 8),
                   _buildAIBadge('📊 ${demandLevel} Demand', demandColor),
                 ],
@@ -1918,19 +2133,35 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [const Color(0xFF6366F1).withOpacity(0.08), const Color(0xFF8B5CF6).withOpacity(0.04)],
+                    colors: [
+                      const Color(0xFF6366F1).withOpacity(0.08),
+                      const Color(0xFF8B5CF6).withOpacity(0.04),
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF6366F1).withOpacity(0.2)),
+                  border: Border.all(
+                    color: const Color(0xFF6366F1).withOpacity(0.2),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.lightbulb_outline, color: Color(0xFF6366F1), size: 16),
+                        Icon(
+                          Icons.lightbulb_outline,
+                          color: Color(0xFF6366F1),
+                          size: 16,
+                        ),
                         SizedBox(width: 6),
-                        Text('AI Recommendation', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF6366F1))),
+                        Text(
+                          'AI Recommendation',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6366F1),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -1938,7 +2169,11 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                       suggestedIncrease > 0
                           ? '$demandLevel demand across $totalRooms rooms. Recommend raising base rates by $suggestedIncrease% to maximize RevPAR. Focus upselling on premium room types.'
                           : 'Occupancy is below target. Consider promotional rates (${suggestedIncrease.abs()}% discount), package deals, or targeted marketing to drive bookings.',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade700, height: 1.4),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                        height: 1.4,
+                      ),
                     ),
                   ],
                 ),
@@ -2040,12 +2275,21 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
 
   Widget _buildAIDemandForecastWidget() {
     // Monthly revenue data for chart
-    final monthlyData = _selectedPropertyId == null ? _monthlyRevenueData : _revenueData.map<Map<String, dynamic>>((r) => r as Map<String, dynamic>).toList();
+    final monthlyData = _selectedPropertyId == null
+        ? _monthlyRevenueData
+        : _revenueData
+              .map<Map<String, dynamic>>((r) => r as Map<String, dynamic>)
+              .toList();
     final avgMonthly = monthlyData.isNotEmpty
-        ? monthlyData.map((m) => ((m['total'] ?? 0) as num).toDouble()).reduce((a, b) => a + b) / monthlyData.length
+        ? monthlyData
+                  .map((m) => ((m['total'] ?? 0) as num).toDouble())
+                  .reduce((a, b) => a + b) /
+              monthlyData.length
         : 0.0;
     final next3Rev = avgMonthly * 3;
-    final occupancyRate = _aggTotalRooms > 0 ? (_aggActiveBookings / _aggTotalRooms * 100).round() : 0;
+    final occupancyRate = _aggTotalRooms > 0
+        ? (_aggActiveBookings / _aggTotalRooms * 100).round()
+        : 0;
 
     // Per-property forecast from backend
     final forecast = (_forecastData?['forecast'] as List?) ?? [];
@@ -2067,30 +2311,63 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)]),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0EA5E9), Color(0xFF06B6D4)],
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.analytics_outlined, size: 12, color: Colors.white),
+                      Icon(
+                        Icons.analytics_outlined,
+                        size: 12,
+                        color: Colors.white,
+                      ),
                       SizedBox(width: 4),
-                      Text('FORECAST', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                      Text(
+                        'FORECAST',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Text('Demand Forecast', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B))),
+                const Text(
+                  'Demand Forecast',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
                 const Spacer(),
                 if (_selectedPropertyId != null && trend != '0%')
                   Row(
                     children: [
-                      Icon(trendUp ? Icons.trending_up : Icons.trending_down,
-                          size: 14, color: trendUp ? Colors.green : Colors.red),
+                      Icon(
+                        trendUp ? Icons.trending_up : Icons.trending_down,
+                        size: 14,
+                        color: trendUp ? Colors.green : Colors.red,
+                      ),
                       const SizedBox(width: 2),
-                      Text(trend, style: TextStyle(fontSize: 11, color: trendUp ? Colors.green : Colors.red, fontWeight: FontWeight.bold)),
+                      Text(
+                        trend,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: trendUp ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
               ],
@@ -2103,36 +2380,73 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                 child: BarChart(
                   BarChartData(
                     alignment: BarChartAlignment.spaceAround,
-                    maxY: monthlyData.map((r) => ((r['total'] ?? 0) as num).toDouble()).fold<double>(0, (a, b) => a > b ? a : b) * 1.3,
+                    maxY:
+                        monthlyData
+                            .map((r) => ((r['total'] ?? 0) as num).toDouble())
+                            .fold<double>(0, (a, b) => a > b ? a : b) *
+                        1.3,
                     titlesData: const FlTitlesData(show: false),
                     borderData: FlBorderData(show: false),
                     gridData: const FlGridData(show: false),
-                    barGroups: monthlyData.asMap().entries.map((e) => BarChartGroupData(
-                      x: e.key,
-                      barRods: [BarChartRodData(
-                        toY: ((e.value['total'] ?? 0) as num).toDouble(),
-                        color: const Color(0xFF0EA5E9),
-                        width: 10,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-                      )],
-                    )).toList(),
+                    barGroups: monthlyData
+                        .asMap()
+                        .entries
+                        .map(
+                          (e) => BarChartGroupData(
+                            x: e.key,
+                            barRods: [
+                              BarChartRodData(
+                                toY: ((e.value['total'] ?? 0) as num)
+                                    .toDouble(),
+                                color: const Color(0xFF0EA5E9),
+                                width: 10,
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(3),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                        .toList(),
                   ),
                 ),
               ),
               const SizedBox(height: 12),
             ],
-            _buildAIMetricRow(Icons.show_chart, 'Avg Monthly Revenue', 'LKR ${NumberFormat('#,###').format(avgMonthly)}',
-                trendUp ? Colors.green : Colors.orange, 0.7),
+            _buildAIMetricRow(
+              Icons.show_chart,
+              'Avg Monthly Revenue',
+              'LKR ${NumberFormat('#,###').format(avgMonthly)}',
+              trendUp ? Colors.green : Colors.orange,
+              0.7,
+            ),
             const SizedBox(height: 8),
-            _buildAIMetricRow(Icons.rocket_launch, 'Next 3 Months Projected', 'LKR ${NumberFormat('#,###').format(next3Rev)}',
-                Colors.blue, 0.65),
+            _buildAIMetricRow(
+              Icons.rocket_launch,
+              'Next 3 Months Projected',
+              'LKR ${NumberFormat('#,###').format(next3Rev)}',
+              Colors.blue,
+              0.65,
+            ),
             const SizedBox(height: 8),
-            _buildAIMetricRow(Icons.hotel, 'Current Occupancy', '$occupancyRate%',
-                occupancyRate > 60 ? Colors.green : Colors.orange, occupancyRate / 100.0),
+            _buildAIMetricRow(
+              Icons.hotel,
+              'Current Occupancy',
+              '$occupancyRate%',
+              occupancyRate > 60 ? Colors.green : Colors.orange,
+              occupancyRate / 100.0,
+            ),
             if (forecast.isNotEmpty) ...[
               const SizedBox(height: 12),
               const Divider(),
-              const Text('Month-wise Predictions', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+              const Text(
+                'Month-wise Predictions',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF64748B),
+                ),
+              ),
               const SizedBox(height: 8),
               ...forecast.take(3).map((f) {
                 final conf = ((f['confidence'] ?? 0.5) * 100).round();
@@ -2140,13 +2454,39 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
                   padding: const EdgeInsets.only(bottom: 6),
                   child: Row(
                     children: [
-                      Expanded(child: Text(f['month'] ?? '', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500))),
-                      Text('${f['predictedBookings']} bookings', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                      Expanded(
+                        child: Text(
+                          f['month'] ?? '',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${f['predictedBookings']} bookings',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.grey,
+                        ),
+                      ),
                       const SizedBox(width: 8),
-                      Text('LKR ${NumberFormat('#,###').format(f['predictedRevenue'])}',
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
+                      Text(
+                        'LKR ${NumberFormat('#,###').format(f['predictedRevenue'])}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
                       const SizedBox(width: 6),
-                      Text('($conf%)', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                      Text(
+                        '($conf%)',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -2158,18 +2498,32 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF0EA5E9).withOpacity(0.2)),
+                border: Border.all(
+                  color: const Color(0xFF0EA5E9).withOpacity(0.2),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.insights, color: Color(0xFF0EA5E9), size: 16),
+                  const Icon(
+                    Icons.insights,
+                    color: Color(0xFF0EA5E9),
+                    size: 16,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       _selectedPropertyId != null
-                          ? (trendUp ? 'Positive booking trend (+$trend). Revenue momentum is building — maintain current strategy and consider upsell packages.' : 'Bookings are flat or declining. Run targeted promotions and review pricing to recapture demand.')
-                          : (avgMonthly > 0 ? 'Portfolio revenue averaging LKR ${NumberFormat('#,###').format(avgMonthly)}/month. Consider cross-property packages to drive multi-night bookings.' : 'Add revenue data by processing payments to unlock AI forecasting insights.'),
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF1E40AF), height: 1.4),
+                          ? (trendUp
+                                ? 'Positive booking trend (+$trend). Revenue momentum is building — maintain current strategy and consider upsell packages.'
+                                : 'Bookings are flat or declining. Run targeted promotions and review pricing to recapture demand.')
+                          : (avgMonthly > 0
+                                ? 'Portfolio revenue averaging LKR ${NumberFormat('#,###').format(avgMonthly)}/month. Consider cross-property packages to drive multi-night bookings.'
+                                : 'Add revenue data by processing payments to unlock AI forecasting insights.'),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF1E40AF),
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 ],
@@ -2181,7 +2535,13 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
     );
   }
 
-  Widget _buildAIMetricRow(IconData icon, String label, String value, Color color, double progress) {
+  Widget _buildAIMetricRow(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+    double progress,
+  ) {
     return Row(
       children: [
         Icon(icon, color: color, size: 16),
@@ -2193,8 +2553,21 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                  Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 3),
@@ -2222,7 +2595,14 @@ class _WebDashboardScreenState extends ConsumerState<WebDashboardScreen> {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withOpacity(0.3)),
       ),
-      child: Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

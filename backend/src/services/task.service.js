@@ -1,49 +1,40 @@
-import Task from '../models/task.model.js'; // The database model representing a chore/maintenance ticket
-import Property from '../models/property.model.js'; // Database model representing the hotel
-import User from '../models/user.model.js'; // Database model representing staff members
-import { AppError } from '../middlewares/error.middleware.js'; // Helper for throwing specific HTTP errors
-import { generateTaskCode } from '../utils/codeGenerator.js'; // Helper that makes a random string like "TSK-3F9A"
+import Task from '../models/task.model.js'; 
+import Property from '../models/property.model.js'; 
+import User from '../models/user.model.js'; 
+import { AppError } from '../middlewares/error.middleware.js'; 
+import { generateTaskCode } from '../utils/codeGenerator.js'; 
 
 
-// ==========================================
-// 1. CREATE TASK
-// Creates a new chore and optionally assigns it right away
-// ==========================================
 export const createTask = async (data, assignedBy) => {
   const property = await Property.findById(data.property);
   if (!property) throw new AppError('Property not found', 404);
 
-  // If the manager specified a staff member, verify they actually exist
   if (data.assignedTo) {
     const assignee = await User.findById(data.assignedTo);
     if (!assignee) throw new AppError('Assigned user not found', 404);
   }
 
-  // If the task is linked to a specific hotel room (e.g., "Clean Room 101")
   if (data.room) {
-    // Dynamic import to avoid circular dependency loops between room and task models
     const { default: Room } = await import('../models/room.model.js');
     const room = await Room.findById(data.room);
     if (!room) throw new AppError('Room not found', 404);
     
-    // Security check: Make sure they aren't assigning a task to a room in a totally different hotel
     if (room.property.toString() !== data.property) {
       throw new AppError('Room does not belong to this property', 400);
     }
   }
 
-  // Generate the task and unique ID
   const task = await Task.create({ ...data, assignedBy, code: await generateTaskCode() });
   
-  // Return the newly created task, but immediately inject the full details of the assignee and room so the frontend can display them right away
   return task.populate(['assignedTo', 'room', 'booking']);
 };
 
 
-// ==========================================
-// 2. GET TASKS (For Managers)
-// Fetches the master list of all chores across the whole hotel
-// ==========================================
+
+
+
+
+
 export const getTasks = async (propertyId, { page = 1, limit = 20, status, type, assignedTo, priority }) => {
   const property = await Property.findById(propertyId);
   if (!property) throw new AppError('Property not found', 404);
@@ -56,11 +47,11 @@ export const getTasks = async (propertyId, { page = 1, limit = 20, status, type,
 
   const total = await Task.countDocuments(query);
   const tasks = await Task.find(query)
-    .populate('assignedTo', 'name email') // Show who is doing it
-    .populate('assignedBy', 'name email') // Show who ordered it
-    .populate('room', 'roomNumber roomType') // Show where it is
-    .populate('booking', 'guest.name checkIn checkOut') // Show if it relates to a specific guest's stay
-    .sort({ priority: 1, dueDate: 1 }) // Automatically sort by Priority first, then by Due Date
+    .populate('assignedTo', 'name email') 
+    .populate('assignedBy', 'name email') 
+    .populate('room', 'roomNumber roomType') 
+    .populate('booking', 'guest.name checkIn checkOut') 
+    .sort({ priority: 1, dueDate: 1 }) 
     .skip((page - 1) * limit)
     .limit(limit);
     
@@ -68,10 +59,6 @@ export const getTasks = async (propertyId, { page = 1, limit = 20, status, type,
 };
 
 
-// ==========================================
-// 3. GET MY TASKS (For Staff)
-// A simplified view where a cleaner only sees their own to-do list
-// ==========================================
 export const getMyTasks = async (userId, { page = 1, limit = 20, status }) => {
   const query = { assignedTo: userId };
   if (status) query.status = status;
@@ -89,9 +76,7 @@ export const getMyTasks = async (userId, { page = 1, limit = 20, status }) => {
 };
 
 
-// ==========================================
-// 4. GET TASK BY ID
-// ==========================================
+
 export const getTaskById = async (taskId) => {
   const task = await Task.findById(taskId)
     .populate('assignedTo', 'name email')
@@ -103,24 +88,20 @@ export const getTaskById = async (taskId) => {
 };
 
 
-// The fields that are legally allowed to be edited
 const ALLOWED_TASK_UPDATES = ['title', 'description', 'type', 'priority', 'status', 'assignedTo', 'dueDate', 'dueTime', 'notes', 'images', 'estimatedDuration'];
 
 
-// ==========================================
-// 5. UPDATE TASK
-// ==========================================
+
+
+
 export const updateTask = async (taskId, updates, userId, userRole) => {
   const task = await Task.findById(taskId);
   if (!task) throw new AppError('Task not found', 404);
 
-  // Security: Cleaners can only edit tasks that are actually assigned to them
   if (userRole === 'staff' && task.assignedTo?.toString() !== userId) {
     throw new AppError('You can only update tasks assigned to you', 403);
   }
 
-  // Security: Basic Managers can only edit tasks they created, or tasks assigned to them.
-  // (Full Admins skip this check and can edit anything)
   if (userRole !== 'admin' && userRole !== 'manager') {
     if (task.assignedBy?.toString() !== userId && task.assignedTo?.toString() !== userId) {
       throw new AppError('You can only update tasks you created or are assigned to', 403);
@@ -142,15 +123,11 @@ export const updateTask = async (taskId, updates, userId, userRole) => {
 };
 
 
-// ==========================================
-// 6. COMPLETE TASK
-// A specialized workflow to close out a task and log exactly how long it took
-// ==========================================
+
 export const completeTask = async (taskId, userId, userRole, data = {}) => {
   const task = await Task.findById(taskId);
   if (!task) throw new AppError('Task not found', 404);
 
-  // Security check for standard staff
   if (userRole === 'staff' && task.assignedTo?.toString() !== userId) {
     throw new AppError('You can only complete tasks assigned to you', 403);
   }
@@ -159,12 +136,10 @@ export const completeTask = async (taskId, userId, userRole, data = {}) => {
     throw new AppError('Task is already completed', 409);
   }
 
-  // Update core status
   task.status = 'completed';
   task.completedAt = new Date();
   task.completedBy = userId; // Log exactly who pressed the button
 
-  // If the staff member uploaded proof photos (e.g. "Look, the toilet is clean")
   if (data.completedImages && Array.isArray(data.completedImages)) {
     task.completedImages = data.completedImages;
   }
@@ -176,7 +151,7 @@ export const completeTask = async (taskId, userId, userRole, data = {}) => {
   // Calculate Performance Metric: Exactly how many minutes passed between creation and completion
   if (task.createdAt) {
     const durationMs = new Date() - new Date(task.createdAt);
-    task.actualDuration = Math.round(durationMs / 60000); // convert milliseconds to minutes
+    task.actualDuration = Math.round(durationMs / 60000); 
   }
 
   await task.save();
@@ -184,10 +159,7 @@ export const completeTask = async (taskId, userId, userRole, data = {}) => {
 };
 
 
-// ==========================================
-// 7. TOGGLE SUBTASK
-// Allows checking off individual steps inside a larger task
-// ==========================================
+
 export const toggleSubtask = async (taskId, subtaskIndex, completed, userId, userRole) => {
   const task = await Task.findById(taskId);
   if (!task) throw new AppError('Task not found', 404);
@@ -207,10 +179,7 @@ export const toggleSubtask = async (taskId, subtaskIndex, completed, userId, use
 };
 
 
-// ==========================================
-// 8. TOGGLE CHECKLIST
-// Similar to subtasks, but specifically for the built-in standardized checklists
-// ==========================================
+//
 export const toggleChecklist = async (taskId, checklistIndex, checked, userId, userRole) => {
   const task = await Task.findById(taskId);
   if (!task) throw new AppError('Task not found', 404);
@@ -230,21 +199,16 @@ export const toggleChecklist = async (taskId, checklistIndex, checked, userId, u
 };
 
 
-// ==========================================
-// 9. GET TASK STATS
-// Math engine for the dashboard widgets to show manager bottlenecks
-// ==========================================
+
 export const getTaskStats = async (propertyId) => {
   const property = await Property.findById(propertyId);
   if (!property) throw new AppError('Property not found', 404);
 
-  // Run multiple rapid counts
   const totalTasks = await Task.countDocuments({ property: propertyId });
   const openTasks = await Task.countDocuments({ property: propertyId, status: 'open' });
   const inProgressTasks = await Task.countDocuments({ property: propertyId, status: 'in-progress' });
   const completedTasks = await Task.countDocuments({ property: propertyId, status: 'completed' });
   
-  // Custom query to find things that are NOT done, and the due date has already passed
   const overdueTasks = await Task.countDocuments({
     property: propertyId,
     status: { $in: ['open', 'in-progress'] },
@@ -255,14 +219,11 @@ export const getTaskStats = async (propertyId) => {
 };
 
 
-// ==========================================
-// 10. DELETE TASK
-// ==========================================
+
 export const deleteTask = async (taskId, userId, userRole) => {
   const task = await Task.findById(taskId);
   if (!task) throw new AppError('Task not found', 404);
 
-  // Security: Staff can never delete tasks to hide their work.
   if (userRole === 'staff') {
     throw new AppError('Staff members cannot delete tasks', 403);
   }

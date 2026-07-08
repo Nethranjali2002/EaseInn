@@ -1,14 +1,7 @@
 import Joi from 'joi';
-
-// ==========================================
 // AUTHENTICATION & USER VALIDATORS
-// These schemas act as the "Bouncers" for our API. Before any request reaches the Controller, 
-// these Joi schemas verify that the incoming JSON payload is perfectly formatted and safe.
-// ==========================================
-
 export const registerSchema = Joi.object({
   name: Joi.string().trim().max(100).required(),
-  // Email must be a valid format and is forced to lowercase to prevent duplicate accounts (e.g. John@email.com vs john@email.com)
   email: Joi.string().email().lowercase().trim().required(),
   password: Joi.string().min(8).max(128).required(),
 });
@@ -25,7 +18,7 @@ export const refreshSchema = Joi.object({
 export const updateProfileSchema = Joi.object({
   name: Joi.string().trim().max(100).optional(),
   profileImage: Joi.string().optional().allow(''),
-}).min(1); // Ensures they actually sent AT LEAST ONE field to update, otherwise why make the API call?
+}).min(1); // Ensures they actually sent AT LEAST ONE field to update
 
 export const forgotPasswordSchema = Joi.object({
   email: Joi.string().email().lowercase().trim().required(),
@@ -41,17 +34,15 @@ export const changePasswordSchema = Joi.object({
   newPassword: Joi.string().min(8).max(128).required(),
 });
 
-// ==========================================
+
 // ADMIN/HR: STAFF CREATION
-// Used when an admin is hiring a new employee and creating their backend account
-// ==========================================
+
 export const createUserSchema = Joi.object({
   name: Joi.string().trim().max(100).required(),
   email: Joi.string().email().lowercase().trim().required(),
   password: Joi.string().min(8).max(128).required(),
   role: Joi.string().valid('admin', 'manager', 'staff').optional(),
-  // Regex to ensure phone numbers don't contain letters, allowing for international codes (+)
-  phone: Joi.string().trim().pattern(/^\+?\d{7,15}$/).messages({ 'string.pattern.base': 'Invalid phone number' }).optional(),
+  phone: Joi.string().trim().pattern(/^\+?\d{10}$/).messages({ 'string.pattern.base': 'Invalid phone number' }).optional(),
   address: Joi.string().optional(),
   city: Joi.string().optional(),
   district: Joi.string().optional(),
@@ -73,7 +64,7 @@ export const updateUserSchema = Joi.object({
   name: Joi.string().trim().max(100).optional(),
   email: Joi.string().email().lowercase().trim().optional(),
   role: Joi.string().valid('admin', 'manager', 'staff').optional(),
-  phone: Joi.string().trim().pattern(/^\+?\d{7,15}$/).messages({ 'string.pattern.base': 'Invalid phone number' }).optional(),
+  phone: Joi.string().trim().pattern(/^\+?\d{10}$/).messages({ 'string.pattern.base': 'Invalid phone number' }).optional(),
   address: Joi.string().optional(),
   city: Joi.string().optional(),
   district: Joi.string().optional(),

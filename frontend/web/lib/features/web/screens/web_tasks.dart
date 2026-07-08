@@ -1,19 +1,5 @@
-/// Task Management Screen — CRUD, assignment, priority, subtasks, CSV export.
-///
-/// Central task management interface for hotel operations staff. Tasks represent
-/// housekeeping, maintenance, front desk, or any operational work items.
-///
-/// Key features:
-/// - Summary cards: total tasks, pending, in-progress, completed, overdue, priority breakdown
-/// - Multi-criteria filters: search, status, priority, task type, assignee, property, date range
-/// - Task creation/editing with form validation and dynamic staff loading
-/// - Subtask management: inline add/complete/delete within task detail dialog
-/// - Staff assignment with profile pictures and online status indicators
-/// - CSV export of filtered tasks for reporting
-/// - Status workflow: pending -> in-progress -> completed (with overdue detection)
-///
-/// Uses taskProvider (Riverpod) for data management. Staff list fetched from
-/// /api/admin/users with role=staff for assignment dropdowns.
+// Task management for operations — create/edit tasks, assign staff, manage subtasks and filters.
+
 import 'dart:html' as html;
 import 'dart:typed_data';
 
@@ -877,7 +863,11 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
           return AlertDialog(
             title: Row(
               children: [
-                const Icon(Icons.check_circle, color: Color(0xFF2E7D32), size: 20),
+                const Icon(
+                  Icons.check_circle,
+                  color: Color(0xFF2E7D32),
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 const Text('Complete Task'),
               ],
@@ -895,9 +885,19 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.camera_alt, size: 16, color: Color(0xFF1565C0)),
+                      const Icon(
+                        Icons.camera_alt,
+                        size: 16,
+                        color: Color(0xFF1565C0),
+                      ),
                       const SizedBox(width: 8),
-                      Text('Upload Proof Images', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey.shade800)),
+                      Text(
+                        'Upload Proof Images',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -910,19 +910,37 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(6),
-                              child: Image.network(resolveImageUrl(entry.value), width: 80, height: 80, fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => Container(width: 80, height: 80, color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
+                              child: Image.network(
+                                resolveImageUrl(entry.value),
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Container(
+                                  width: 80,
+                                  height: 80,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(Icons.broken_image),
+                                ),
                               ),
                             ),
                             Positioned(
                               top: 2,
                               right: 2,
                               child: GestureDetector(
-                                onTap: () => setDialogState(() => completedImages.removeAt(entry.key)),
+                                onTap: () => setDialogState(
+                                  () => completedImages.removeAt(entry.key),
+                                ),
                                 child: Container(
                                   padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                  child: const Icon(Icons.close, size: 12, color: Colors.white),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.red,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 12,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
                             ),
@@ -934,47 +952,71 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: isUploading ? null : () async {
-                        final input = html.FileUploadInputElement()..accept = 'image/*';
-                        input.click();
-                        input.onChange.listen((_) async {
-                          if (input.files == null || input.files!.isEmpty) return;
-                          final file = input.files!.first;
-                          final reader = html.FileReader();
-                          reader.readAsArrayBuffer(file);
-                          await reader.onLoad.first;
-                          final result = reader.result;
-                          final Uint8List bytes;
-                          if (result is Uint8List) {
-                            bytes = result;
-                          } else if (result is ByteBuffer) {
-                            bytes = result.asUint8List();
-                          } else {
-                            bytes = (result as dynamic).asUint8List() as Uint8List;
-                          }
-                          setDialogState(() => isUploading = true);
-                          try {
-                            final api = ref.read(apiClientProvider);
-                            final formData = FormData.fromMap({
-                              'file': MultipartFile.fromBytes(bytes, filename: file.name),
-                            });
-                            final response = await api.dio.post('/upload/single', data: formData);
-                            final rawUrl = response.data['data']['url'] as String;
-                            final fullUrl = resolveImageUrl(rawUrl);
-                            setDialogState(() => completedImages.add(fullUrl));
-                          } catch (e) {
-                            if (dialogContext.mounted) {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red),
-                              );
-                            }
-                          } finally {
-                            setDialogState(() => isUploading = false);
-                          }
-                        });
-                      },
+                      onPressed: isUploading
+                          ? null
+                          : () async {
+                              final input = html.FileUploadInputElement()
+                                ..accept = 'image/*';
+                              input.click();
+                              input.onChange.listen((_) async {
+                                if (input.files == null || input.files!.isEmpty)
+                                  return;
+                                final file = input.files!.first;
+                                final reader = html.FileReader();
+                                reader.readAsArrayBuffer(file);
+                                await reader.onLoad.first;
+                                final result = reader.result;
+                                final Uint8List bytes;
+                                if (result is Uint8List) {
+                                  bytes = result;
+                                } else if (result is ByteBuffer) {
+                                  bytes = result.asUint8List();
+                                } else {
+                                  bytes =
+                                      (result as dynamic).asUint8List()
+                                          as Uint8List;
+                                }
+                                setDialogState(() => isUploading = true);
+                                try {
+                                  final api = ref.read(apiClientProvider);
+                                  final formData = FormData.fromMap({
+                                    'file': MultipartFile.fromBytes(
+                                      bytes,
+                                      filename: file.name,
+                                    ),
+                                  });
+                                  final response = await api.dio.post(
+                                    '/upload/single',
+                                    data: formData,
+                                  );
+                                  final rawUrl =
+                                      response.data['data']['url'] as String;
+                                  final fullUrl = resolveImageUrl(rawUrl);
+                                  setDialogState(
+                                    () => completedImages.add(fullUrl),
+                                  );
+                                } catch (e) {
+                                  if (dialogContext.mounted) {
+                                    ScaffoldMessenger.of(
+                                      dialogContext,
+                                    ).showSnackBar(
+                                      SnackBar(
+                                        content: Text('Upload failed: $e'),
+                                        backgroundColor: Colors.red,
+                                      ),
+                                    );
+                                  }
+                                } finally {
+                                  setDialogState(() => isUploading = false);
+                                }
+                              });
+                            },
                       icon: isUploading
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
                           : const Icon(Icons.add_photo_alternate, size: 18),
                       label: Text(isUploading ? 'Uploading...' : 'Add Image'),
                     ),
@@ -983,12 +1025,18 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
               ElevatedButton.icon(
                 onPressed: () => Navigator.pop(ctx, true),
                 icon: const Icon(Icons.check, size: 16),
                 label: const Text('Complete'),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32), foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E7D32),
+                  foregroundColor: Colors.white,
+                ),
               ),
             ],
           );
@@ -998,11 +1046,17 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
 
     if (result != true) return;
 
-    final success = await ref.read(taskProvider.notifier).completeTask(task.id, completedImages: completedImages);
+    final success = await ref
+        .read(taskProvider.notifier)
+        .completeTask(task.id, completedImages: completedImages);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(success ? 'Task completed successfully!' : 'Failed to complete task'),
+          content: Text(
+            success
+                ? 'Task completed successfully!'
+                : 'Failed to complete task',
+          ),
           backgroundColor: success ? Colors.green : Colors.red,
         ),
       );
@@ -1127,10 +1181,16 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
             Expanded(
               child: Text(
                 'Task Details',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
               ),
             ),
-            Text(displayId, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+            Text(
+              displayId,
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+            ),
             const SizedBox(width: 8),
             IconButton(
               icon: const Icon(Icons.close),
@@ -1143,116 +1203,250 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
           height: MediaQuery.of(context).size.height * 0.75,
           child: SingleChildScrollView(
             child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Status Banner
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: statusColor.withOpacity(0.2)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(t.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                    const Spacer(),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: t.priority == 'high' ? Colors.red.shade50 : t.priority == 'medium' ? Colors.orange.shade50 : Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        '${t.priority.toUpperCase()} PRIORITY',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: t.priority == 'high' ? Colors.red.shade700 : t.priority == 'medium' ? Colors.orange.shade700 : Colors.blue.shade700,
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Status Banner
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: statusColor.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          statusLabel,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Text(
+                        t.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: t.priority == 'high'
+                              ? Colors.red.shade50
+                              : t.priority == 'medium'
+                              ? Colors.orange.shade50
+                              : Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          '${t.priority.toUpperCase()} PRIORITY',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: t.priority == 'high'
+                                ? Colors.red.shade700
+                                : t.priority == 'medium'
+                                ? Colors.orange.shade700
+                                : Colors.blue.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 16,
-                runSpacing: 16,
-                children: [
-                  _detailBlock('Task Information', Icons.assignment, const Color(0xFF1565C0), [
-                    _detailRow('Task ID', displayId),
-                    _detailRow('Title', t.title),
-                    _detailRow('Type', _mapTypeToLabel(t.type)),
-                    _detailRow('Created At', t.dueDate != null ? DateFormat('dd MMM yyyy').format(t.dueDate!) : '-'),
-                  ]),
-                  _detailBlock('Location', Icons.location_on, const Color(0xFF6A1B9A), [
-                    _detailRow('Property', propertyName),
-                    _detailRow('Room', t.roomNumber.isNotEmpty ? t.roomNumber : 'Not room-related'),
-                  ]),
-                  _detailBlock('Assignment', Icons.person, const Color(0xFF00695C), [
-                    _detailRow('Assigned To', t.assignedToName.isNotEmpty ? t.assignedToName : 'Unassigned'),
-                    _detailRow('Priority', t.priority.toUpperCase()),
-                    _detailRow('Due Date', t.dueDate != null ? DateFormat('dd MMM yyyy').format(t.dueDate!) : '-'),
-                    if (isOverdue)
-                      Row(
-                        children: [
-                          Icon(Icons.warning_amber, size: 14, color: Colors.red.shade600),
-                          const SizedBox(width: 6),
-                          Text('Overdue by ${DateTime.now().difference(t.dueDate!).inDays} days', style: TextStyle(color: Colors.red.shade700, fontSize: 12, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 16),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    _detailBlock(
+                      'Task Information',
+                      Icons.assignment,
+                      const Color(0xFF1565C0),
+                      [
+                        _detailRow('Task ID', displayId),
+                        _detailRow('Title', t.title),
+                        _detailRow('Type', _mapTypeToLabel(t.type)),
+                        _detailRow(
+                          'Created At',
+                          t.dueDate != null
+                              ? DateFormat('dd MMM yyyy').format(t.dueDate!)
+                              : '-',
+                        ),
+                      ],
+                    ),
+                    _detailBlock(
+                      'Location',
+                      Icons.location_on,
+                      const Color(0xFF6A1B9A),
+                      [
+                        _detailRow('Property', propertyName),
+                        _detailRow(
+                          'Room',
+                          t.roomNumber.isNotEmpty
+                              ? t.roomNumber
+                              : 'Not room-related',
+                        ),
+                      ],
+                    ),
+                    _detailBlock(
+                      'Assignment',
+                      Icons.person,
+                      const Color(0xFF00695C),
+                      [
+                        _detailRow(
+                          'Assigned To',
+                          t.assignedToName.isNotEmpty
+                              ? t.assignedToName
+                              : 'Unassigned',
+                        ),
+                        _detailRow('Priority', t.priority.toUpperCase()),
+                        _detailRow(
+                          'Due Date',
+                          t.dueDate != null
+                              ? DateFormat('dd MMM yyyy').format(t.dueDate!)
+                              : '-',
+                        ),
+                        if (isOverdue)
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.warning_amber,
+                                size: 14,
+                                color: Colors.red.shade600,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Overdue by ${DateTime.now().difference(t.dueDate!).inDays} days',
+                                style: TextStyle(
+                                  color: Colors.red.shade700,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                    _detailBlock(
+                      'Description',
+                      Icons.notes,
+                      const Color(0xFF795548),
+                      [
+                        Text(
+                          t.description.isNotEmpty
+                              ? t.description
+                              : 'No description provided.',
+                          style: TextStyle(
+                            color: Colors.grey.shade700,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    _detailBlock(
+                      'Timeline',
+                      Icons.timeline,
+                      const Color(0xFF4527A0),
+                      [
+                        _timelineItem(
+                          'Task Created',
+                          t.dueDate != null
+                              ? DateFormat('dd MMM yyyy').format(t.dueDate!)
+                              : '-',
+                          true,
+                          const Color(0xFF2E7D32),
+                        ),
+                        if (t.assignedToName.isNotEmpty)
+                          _timelineItem(
+                            'Assigned to ${t.assignedToName}',
+                            '-',
+                            t.assignedToName.isNotEmpty,
+                            const Color(0xFF1565C0),
+                          ),
+                        if (t.status == 'in-progress' ||
+                            t.status == 'completed')
+                          _timelineItem(
+                            'In Progress',
+                            '-',
+                            t.status == 'in-progress' ||
+                                t.status == 'completed',
+                            const Color(0xFFE65100),
+                          ),
+                        if (t.status == 'completed')
+                          _timelineItem(
+                            'Completed',
+                            t.completedAt != null
+                                ? DateFormat(
+                                    'dd MMM yyyy HH:mm',
+                                  ).format(t.completedAt!)
+                                : '-',
+                            true,
+                            const Color(0xFF2E7D32),
+                          ),
+                        if (t.status != 'completed')
+                          _timelineItem('Completed', '-', false, Colors.grey),
+                      ],
+                    ),
+                    if (t.completedImages.isNotEmpty)
+                      _detailBlock(
+                        'Completion Proof',
+                        Icons.photo_library,
+                        const Color(0xFF2E7D32),
+                        [
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: t.completedImages
+                                .map(
+                                  (img) => ClipRRect(
+                                    borderRadius: BorderRadius.circular(6),
+                                    child: Image.network(
+                                      resolveImageUrl(img),
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => Container(
+                                        width: 100,
+                                        height: 100,
+                                        color: Colors.grey.shade200,
+                                        child: const Icon(Icons.broken_image),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                          ),
                         ],
                       ),
-                  ]),
-                  _detailBlock('Description', Icons.notes, const Color(0xFF795548), [
-                    Text(
-                      t.description.isNotEmpty ? t.description : 'No description provided.',
-                      style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-                    ),
-                  ]),
-                  _detailBlock('Timeline', Icons.timeline, const Color(0xFF4527A0), [
-                    _timelineItem('Task Created', t.dueDate != null ? DateFormat('dd MMM yyyy').format(t.dueDate!) : '-', true, const Color(0xFF2E7D32)),
-                    if (t.assignedToName.isNotEmpty)
-                      _timelineItem('Assigned to ${t.assignedToName}', '-', t.assignedToName.isNotEmpty, const Color(0xFF1565C0)),
-                    if (t.status == 'in-progress' || t.status == 'completed')
-                      _timelineItem('In Progress', '-', t.status == 'in-progress' || t.status == 'completed', const Color(0xFFE65100)),
-                    if (t.status == 'completed')
-                      _timelineItem('Completed', t.completedAt != null ? DateFormat('dd MMM yyyy HH:mm').format(t.completedAt!) : '-', true, const Color(0xFF2E7D32)),
-                    if (t.status != 'completed')
-                      _timelineItem('Completed', '-', false, Colors.grey),
-                  ]),
-                  if (t.completedImages.isNotEmpty)
-                    _detailBlock('Completion Proof', Icons.photo_library, const Color(0xFF2E7D32), [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: t.completedImages.map((img) => ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: Image.network(resolveImageUrl(img), width: 100, height: 100, fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => Container(width: 100, height: 100, color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
-                          ),
-                        )).toList(),
-                      ),
-                    ]),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-      ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -1285,7 +1479,10 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
             ),
           ),
           if (time.isNotEmpty && time != '-')
-            Text(time, style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+            Text(
+              time,
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+            ),
         ],
       ),
     );
@@ -1314,7 +1511,12 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
     );
   }
 
-  Widget _detailBlock(String title, IconData icon, Color color, List<Widget> children) {
+  Widget _detailBlock(
+    String title,
+    IconData icon,
+    Color color,
+    List<Widget> children,
+  ) {
     return SizedBox(
       width: 420,
       child: Card(

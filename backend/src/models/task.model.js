@@ -1,12 +1,8 @@
 import mongoose from 'mongoose';
 
-// ==========================================
-// TASK SCHEMA
-// An internal ticketing system for hotel staff (Housekeeping, Maintenance, etc.).
-// ==========================================
 const taskSchema = new mongoose.Schema(
   {
-    // Auto-generated human readable code (e.g., "TSK-240518-0001")
+    
     code: {
       type: String,
       unique: true,
@@ -14,7 +10,6 @@ const taskSchema = new mongoose.Schema(
       index: true,
     },
     
-    // Which hotel branch is this task for?
     property: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Property',
@@ -22,9 +17,6 @@ const taskSchema = new mongoose.Schema(
       index: true,
     },
     
-    // ==========================================
-    // CORE TASK DETAILS
-    // ==========================================
     title: {
       type: String,
       required: [true, 'Task title is required'],
@@ -37,59 +29,46 @@ const taskSchema = new mongoose.Schema(
       maxlength: 2000,
     },
     
-    // Categorization for filtering and reporting
     type: {
       type: String,
       enum: ['housekeeping', 'maintenance', 'guest_service', 'inspection', 'other'],
       default: 'housekeeping',
     },
     
-    // Helps staff know what to do first
     priority: {
       type: String,
       enum: ['low', 'medium', 'high', 'urgent'],
       default: 'medium',
     },
     
-    // Workflow state machine
     status: {
       type: String,
       enum: ['open', 'in-progress', 'blocked', 'completed', 'cancelled'],
       default: 'open',
     },
     
-    // ==========================================
-    // ASSIGNMENTS & CONTEXT
-    // ==========================================
     
-    // Who is supposed to do the work?
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
     
-    // Who ordered the work to be done?
     assignedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
     
-    // If the task is physical, where is it? (e.g. "Clean Room 101")
     room: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Room',
     },
     
-    // If the task is related to a specific guest stay (e.g. "Deliver extra pillows to Mr. Smith")
     booking: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Booking',
     },
     
-    // ==========================================
-    // DEADLINES & TIMETRACKING
-    // ==========================================
     dueDate: {
       type: Date,
     },
@@ -105,21 +84,16 @@ const taskSchema = new mongoose.Schema(
       ref: 'User',
     },
     
-    // How long should this take vs how long did it actually take? (Used for employee performance reviews)
     estimatedDuration: {
-      type: Number, // In minutes
+      type: Number, 
       min: 0,
     },
     actualDuration: {
-      type: Number, // In minutes
+      type: Number, 
       min: 0,
     },
     
-    // ==========================================
-    // DETAILED WORKFLOWS
-    // ==========================================
     
-    // For breaking a big task ("Deep clean pool") into smaller pieces
     subtasks: [
       {
         title: { type: String, trim: true, required: true },
@@ -128,7 +102,6 @@ const taskSchema = new mongoose.Schema(
       },
     ],
     
-    // Standardized QA lists (e.g. "1. Change sheets, 2. Empty trash, 3. Restock soap")
     checklist: [
       {
         item: { type: String, trim: true, required: true },
@@ -142,7 +115,6 @@ const taskSchema = new mongoose.Schema(
       maxlength: 2000,
     },
     
-    // Visual proof. `images` = The mess before. `completedImages` = The clean room after.
     images: [{ type: String }],
     completedImages: [{ type: String }],
   },
@@ -153,11 +125,10 @@ const taskSchema = new mongoose.Schema(
   }
 );
 
-// Database Indexes for Speed Optimization
-taskSchema.index({ property: 1, status: 1 }); // "Show me all incomplete tasks for this hotel"
-taskSchema.index({ assignedTo: 1, status: 1 }); // "Show the logged-in housekeeper their todo list"
-taskSchema.index({ property: 1, dueDate: 1 }); // "Show me tasks that are overdue today"
-taskSchema.index({ room: 1, status: 1 }); // "Is this room currently being cleaned?"
+taskSchema.index({ property: 1, status: 1 }); 
+taskSchema.index({ assignedTo: 1, status: 1 });
+taskSchema.index({ property: 1, dueDate: 1 }); 
+taskSchema.index({ room: 1, status: 1 }); 
 
 const Task = mongoose.model('Task', taskSchema);
 
