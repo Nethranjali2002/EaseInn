@@ -1981,6 +1981,8 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
         return 'transport';
       case 'Inventory':
         return 'inventory';
+      case 'Other':
+        return 'other';
       default:
         return 'other';
     }
@@ -1992,6 +1994,8 @@ class _WebTasksScreenState extends ConsumerState<WebTasksScreen> {
         return 'Pending';
       case 'in-progress':
         return 'In Progress';
+      case 'blocked':
+        return 'Blocked';
       case 'completed':
         return 'Completed';
       case 'cancelled':
